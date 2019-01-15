@@ -557,7 +557,7 @@ glht(glm02, linfct = K) %>% summary()
 
 
 #################################################
-#-----------------------------------------------------------------
+#アマモ場以外で一年間解析その2-----------------------------------------------------------------
 dset01 = 
   df1  %>% 
   filter(str_detect("GEP", key)) %>% 
@@ -580,16 +580,14 @@ summary(glm02)
 
 coefficients(glm02)
 exp(coefficients(glm02) [1])
-exp(coefficients(glm02) [1] + coefficients(glm02) [3])#Zostera
-exp(coefficients(glm02) [1] + coefficients(glm02) [4])#Sargassum
-exp(coefficients(glm02) [1] + coefficients(glm02) [5])#Old port
-exp(coefficients(glm02) [1] + coefficients(glm02) [6])#New port
+exp(coefficients(glm02) [1] + coefficients(glm02) [3])#Sargassum
+exp(coefficients(glm02) [1] + coefficients(glm02) [4])#Old port
+exp(coefficients(glm02) [1] + coefficients(glm02) [5])#New port
 
 (coefficients(glm02) [2]) # Isoyake
-(coefficients(glm02) [2] + coefficients(glm02) [7]) # Zostera
-(coefficients(glm02) [2] + coefficients(glm02) [8]) # Sargassum
-(coefficients(glm02) [2] + coefficients(glm02) [9]) # Old port
-(coefficients(glm02) [2] + coefficients(glm02) [10]) # New port
+(coefficients(glm02) [2] + coefficients(glm02) [6]) # Sargassum
+(coefficients(glm02) [2] + coefficients(glm02) [7]) # Old port
+(coefficients(glm02) [2] + coefficients(glm02) [8]) # New port
 
 dset01 %>% 
   group_by(location) %>% 
@@ -624,5 +622,14 @@ K = rbind("Sargassum - Isoyake"     = c(0, 0,  1,  0, 0, 0, 0, 0),
           "New port - Old port"     = c(0, 0,  0, -1, 1, 0, 0, 0))
 glht(glm02, linfct = K) %>% summary()
 
+#傾き比較
+glht(glm02, mcp(location = "Tukey")) %>% summary()
+K = rbind("Sargassum - Isoyake"     = c(0, 0,  0,  0, 0,  1,  0, 0),
+          "Old port - Isoyake"      = c(0, 0,  0,  0, 0,  0,  1, 0),
+          "New port - Isoyake"      = c(0, 0,  0,  0, 0,  0,  0, 1),
+          "Old port - Sargassum"    = c(0, 0,  0,  0, 0, -1,  1, 0),
+          "New port - Sargassum"    = c(0, 0,  0,  0, 0, -1,  0, 1),
+          "New port - Old port"     = c(0, 0,  0,  0, 0,  0, -1, 1))
+glht(glm02, linfct = K) %>% summary()
 
 
