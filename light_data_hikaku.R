@@ -52,7 +52,7 @@ load("../Light_calibration_20181225/20181218_Odyssey_Calibration_Model.rda", ver
 calib_model_18 = calibration_coefficient_2
 load("../Light_calibration_20181225/20181220_Odyssey_Calibration_Model.rda", verbose = T)
 calib_model_20 = calibration_coefficient_2
-
+calib_model_18 %>% pull(model)
 #光ロガーデータ読み込み--------------------------------------
 #拡張子がCSVとXLSXがあるが、時間補正のやり方が違うため、グループ化
 light = 
@@ -71,9 +71,6 @@ light %>% unnest() %>% arrange(fnames) %>%
   separate(fnames,LETTERS[1:10]) %>% 
   filter(str_detect(G, "mushima")) %>% 
   print(n = Inf)
-
-dset %>% filter(Date == as.Date("2018-04-18"), 
-                str_detect(location, "mushima3"))
 
 #時間補正
 #CSVとXLSXは異なるやり方
@@ -244,9 +241,14 @@ dset =
   })) %>% unnest() 
 
 
-dset = dset %>% mutate(data = map(data, function(X) {
-  X %>% mutate(ppfd = ppfd - min(ppfd))
-}))
+dset = 
+  dset %>%
+  group_by(location, id, Date, position) %>% 
+  nest() %>% 
+  mutate(data = map(data, function(X) {
+    X %>% mutate(ppfd = ppfd - min(ppfd)) %>% 
+      mutate(ppfd = ifelse(ppfd <1, 0, ppfd))
+  })) %>% unnest()
 
 #各日付ごとの一日あたりの総 PPFD
 # PPFD: mumol/m2/s から mol/m2/day
@@ -316,7 +318,7 @@ dset_daily %>%
   geom_point()+
   facet_wrap("floor_month", scales = "free")
 
-
+dset %>% filter(str_detect(location, "tainoura")) %>% unnest()
 
 dset %>% unnest() %>% select(location, position, Date, ppfd, datetime, H) %>% 
   write_csv(path = "Modified_data/light_calibrate.csv")

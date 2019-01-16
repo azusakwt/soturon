@@ -183,7 +183,8 @@ rate_tall %>%
 
 
 rate_tall  %>% filter(str_detect("GEP", key)) %>% pull(value) %>% range(na.rm = T)
-
+rate_tall  %>% filter(str_detect("RP", key)) %>% pull(value) %>% range(na.rm = T)
+rate_tall  %>% filter(str_detect("NEP", key)) %>% pull(value) %>% range(na.rm = T)
 
 xlabel = ""
 ylabel = expression("GEP"~(g~O[2]~m^{-2}~day^{-1}))

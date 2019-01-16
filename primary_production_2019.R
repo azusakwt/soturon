@@ -117,6 +117,8 @@ dset02 =
   filter(str_detect("GEP", key)) %>% 
   filter(month > 5)
 
+df1 %>% spread(key, value)
+
 # 一年分のデータ解析
 dset01 = 
   df1  %>% 
