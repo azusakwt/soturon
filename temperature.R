@@ -179,7 +179,7 @@ temperature_m %>%
   ggplot()+
   geom_line(aes(x = month, y = mean_temperature, color = location))
 
-# write_csv(temperature,"../soturon_2019/Modified_data/kamigoto_temperature.csv")
+write_csv(temperature,"../soturon_2019/Modified_data/temperature.csv")
 
 temperature = bind_rows(temperature_a,temperature_m)
 
