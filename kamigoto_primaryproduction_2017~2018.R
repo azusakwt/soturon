@@ -43,7 +43,6 @@ oxygen = oxygen_file %>%
   mutate(oxygen = map(file,
                       read_csv))
 oxygen %>% slice(1) %>% unnest()
-
 # 光データの読み込み--------------------------------------------------------------------------------------
 
 light = read_csv("Modified_data/light_calibrate.csv")
@@ -66,7 +65,15 @@ tmp =
              light  %>% filter(str_detect(position, "0m")), 
              by = c("datetime", "location", "position", "Date"))
 
+tmp %>% filter(str_detect(location, "tainoura"))
+
+tmp  = tmp %>% mutate(ppfd = ifelse(ppfd < 1, 0, ppfd)) 
+
+# tmp %>% filter(ppfd < 10) %>%  pull(ppfd) %>% unique()
+
 tmp = tmp %>% mutate(light_group = ifelse(near(ppfd, 0), F, T))
+
+
 
 tmp = 
   tmp %>%  
@@ -130,6 +137,7 @@ rate_tall =
 rate_tall = rate_tall %>% mutate(month = month(Date))
 
 # write_csv(rate_tall,"../soturon_2019/Modified_data/kamigoto_production.csv")
+
 p1 = 
   rate_tall %>% filter(str_detect("GEP", key)) %>% 
   ggplot() +
