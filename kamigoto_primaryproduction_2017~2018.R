@@ -73,7 +73,11 @@ tmp  = tmp %>% mutate(ppfd = ifelse(ppfd < 1, 0, ppfd))
 
 tmp = tmp %>% mutate(light_group = ifelse(near(ppfd, 0), F, T))
 
-
+oxygen %>% 
+  group_by(Date, location, position) %>% nest() %>% 
+  slice(1:10) %>% unnest() %>% 
+  ggplot(aes(x = datetime, y=oxygen, color = position)) +
+  geom_line()
 
 tmp = 
   tmp %>%  
@@ -81,7 +85,7 @@ tmp =
   summarise(rate_sum = sum(rate* 1),
             duration_hours = length(rate) / 6) 
 
-
+tmp
 
 tmp =
   tmp %>% 
@@ -185,10 +189,11 @@ rate_tall %>%
   geom_line()+
   geom_smooth(method = "gam", formula = y ~ s(x))  + # デフォルトは正規分布
   facet_grid(location ~ key)
-  
+
 
 rate_tall  %>% filter(str_detect("GEP", key)) %>% pull(value) %>% range(na.rm = T)
-
+rate_tall  %>% filter(str_detect("RP", key)) %>% pull(value) %>% range(na.rm = T)
+rate_tall  %>% filter(str_detect("NEP", key)) %>% pull(value) %>% range(na.rm = T)
 
 xlabel = ""
 ylabel = expression("GEP"~(g~O[2]~m^{-2}~day^{-1}))
