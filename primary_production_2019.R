@@ -18,7 +18,7 @@ library(lemon)
 #データの読み込み
 kamigoto = read_csv("Modified_data/kamigoto_production.csv")
 mushima = read_csv("Modified_data/mushima_production.csv")
-
+kamigoto %>% spread(key, value)
 df1 = bind_rows(kamigoto,mushima)
 
 # write_csv(df1, "../soturon_2019/Modified_data/prymary_production.csv")
@@ -120,7 +120,7 @@ dset02 =
 # 一年分のデータ解析
 dset01 = 
   df1  %>% 
-  filter(str_detect("GEP", key)) %>% 
+  filter(str_detect("NEP", key)) %>% 
   filter(!str_detect(location, "Zostera"))
 # アマモなしの図
 dset01 %>% 
