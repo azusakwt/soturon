@@ -120,7 +120,7 @@ dset02 =
 # 一年分のデータ解析
 dset01 = 
   df1  %>% 
-  filter(str_detect("RP", key)) %>% 
+  filter(str_detect("GEP", key)) %>% 
   filter(!str_detect(location, "Zostera"))
 
 # Gamma 分布のデフォルトのリンク関数は 1/y
@@ -461,7 +461,7 @@ dset01 %>%
 
 # アマモもいれる (データ解析) -----------
 
-rate_tall  %>% 
+df1  %>% 
   filter(str_detect("NEP", key)) %>% 
   filter(month > 5) %>% 
   ggplot(aes(x = month,
@@ -478,7 +478,7 @@ rate_tall  %>%
   facet_grid(location ~ .)
 
 dset02 = 
-  rate_tall  %>% 
+  df1  %>% 
   filter(str_detect("NEP", key)) %>% 
   filter(month > 5)
 
