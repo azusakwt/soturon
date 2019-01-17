@@ -189,17 +189,26 @@ dset01 %>% pull(ppfd) %>% range()
 # 水温------------------------------------------------
 
 ggplot(dset01)+
-  geom_point(aes(x = temperature, y= value, ))+
+  geom_point(aes(x = temperature, y= value, color = location))+
   facet_rep_wrap("location")
 
-gam00 = gam(value ~ s(temperature, bs = "cc"),
+dset01 %>% 
+  ggplot(aes(x = temperature,
+           y = value, 
+           color = location)) +
+  geom_point() +
+  geom_smooth(method = "glm", 
+              formula = y ~ x)  + 
+  facet_rep_wrap("location")
+
+gam00 = gam(value ~ s(temperature),
             data = dset01)   # 帰無仮説：location の影響はない
-gam01 = gam(value ~ s(temperature, bs = "cc") + location, 
+gam01 = gam(value ~ s(temperature) + location, 
             data = dset01) # 対立仮設：location の影響はある
-gam02 = gam(value ~s(temperature, bs = "cc", by = location) + location, 
+gam02 = gam(value ~ s(temperature, by = location) + location, 
             data = dset01) # 対立仮設：location の影響はある
-# F検定をつかって，二つのモデルの比較
 
 anova(gam00, gam01, gam02, test = "F")
-summary(gam01)
+summary(gam02)
+
 
