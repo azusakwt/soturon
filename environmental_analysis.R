@@ -17,11 +17,29 @@ library(mgcv) # GAM 解析用パッケージ
 library(lemon)
 library(ggfortify)
 library(nlstools) # 非線形モデルの当てはめに役立つパッケージ
+library(glue)
 
 # データの読み込み ----
+# kamigoto & mushima のサンプリング日と nutrient のサンプリン日は
+# 異なるので，そのまま full_join() できない。
+ 
 kamigoto = read_csv("Modified_data/kamigoto_production.csv")
 mushima = read_csv("Modified_data/mushima_production.csv")
-df1 = bind_rows(kamigoto,mushima)
+nutrient = read_csv("~/Lab_Data/nutrient/no2no3po4_all_station.csv")
+
+nutrient_summary =
+  nutrient %>% 
+  rename(Date = date) %>% 
+  mutate(variable = as.character(glue("{station} ({variable})")),
+         month = month(Date),
+         conc = ifelse(conc < 0, 0, conc)) %>% 
+  group_by(variable, Date, Nutrient) %>% 
+  summarise(conc = mean(conc)) %>% 
+  mutate(month = month(Date)) %>% 
+  ungroup() %>% 
+  filter(str_detect(variable, "Isoyake|Sargassum"))
+
+df1 = bind_rows(kamigoto, mushima)
 
 # cem = read_csv("Modified_data/CEM_fixed.csv")
 # cku = read_csv("Modified_data/CKU_fixed.csv")
@@ -156,7 +174,7 @@ fullmodel =
                  dpmax, dalpha, drd),
       start = list(pmax = 12, alpha = 0.5, rd = 1,
                    dpmax = 1, dalpha = 0.1, drd = 0.1),
-        data = dset01)
+      data = dset01)
 
 anova(nullmodel, fullmodel, test = "F")
 summary(fullmodel)
