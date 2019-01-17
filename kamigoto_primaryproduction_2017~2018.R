@@ -35,10 +35,8 @@ WIDTH = 297/2
 HEIGHT = 210/2
 
 # 溶存酸素のデータの読み込み --------------------------------------------------------------------------------------
-fnames = dir("../",pattern = "kamigoto",full=T)
-fnames = grep(x = fnames,pattern = "(\\.){2}//kamigoto_[0-9]{6}",value = T)
-fnames = paste(fnames,"/Modified_data/", sep = "")
-oxygen_file = data_frame(file = as.character(dir(fnames, pattern = "oxygen", full.names = T)))
+fnames = dir("~/Lab_Data/kawatea/Modified_Data/",pattern = "kamigoto_oxygen",full=T)
+oxygen_file = data_frame(file = fnames)
 oxygen = oxygen_file %>% 
   mutate(oxygen = map(file,
                       read_csv))
