@@ -54,14 +54,14 @@ oxygen =
 oxygen %>% pull(location) %>% unique()
 light %>% pull(location) %>% unique()
 
-oxygen %>% pull(position) %>% unique()
+tmp %>% pull(position) %>% unique()
 light %>% pull(position) %>% unique()
 
 
 tmp =
-  inner_join(oxygen %>% filter(str_detect(position, "0m")), 
+  inner_join(oxygen %>% filter(str_detect(position, "[(0m)(1m)]")), 
              light  %>% filter(str_detect(position, "0m")), 
-             by = c("datetime", "location", "position", "Date"))
+             by = c("datetime", "location","Date")) 
 
 tmp %>% filter(str_detect(location, "tainoura"))
 
@@ -77,9 +77,14 @@ oxygen %>%
   ggplot(aes(x = datetime, y=oxygen, color = position)) +
   geom_line()
 
+tmp = tmp %>%
+  select(Date, location, datetime, position.x,
+         rate, oxygen, temperature, ppfd, H, light_group) %>% 
+  rename(position = position.x)
+
 tmp = 
-  tmp %>%  
-  group_by(Date, location,light_group) %>%
+  tmp %>% 
+  group_by(Date, location, position, light_group) %>%
   summarise(rate_sum = sum(rate* 1),
             duration_hours = length(rate) / 6) 
 
@@ -119,7 +124,7 @@ rate =
 #   print(n = Inf)
 
 ggplot(rate)+
-  geom_point(aes(x = Date,y = RP))+
+  geom_point(aes(x = Date,y = RP,color = position))+
   facet_grid(. ~ location)
 
 # RP <= 0, GEP <= 0 のデータを解析から外します
@@ -128,13 +133,12 @@ rate = rate %>%
   mutate(RP = ifelse(RP <= 0, NA, RP)) %>% 
   mutate(GEP = NEP + RP) %>%
   mutate(GEP = ifelse(GEP <= 0, NA, GEP)) %>% 
-  drop_na()
-
-
+  drop_na() 
+  
 
 rate_tall = 
   rate %>% 
-  gather(key = "key", value = "value", -Date, -location)
+  gather(key = "key", value = "value", -Date, -location,-position)
 
 rate_tall = rate_tall %>% mutate(month = month(Date))
 

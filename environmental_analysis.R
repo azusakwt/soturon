@@ -22,8 +22,7 @@ library(glue)
 # データの読み込み ----
 # kamigoto & mushima のサンプリング日と nutrient のサンプリン日は
 # 異なるので，そのまま full_join() できない。
- 
-kamigoto = read_csv("Modified_data/kamigoto_production.csv")
+kamigoto = read_csv("Modified_data/primary_production_0m+1m.csv")
 mushima = read_csv("Modified_data/mushima_production.csv")
 nutrient = read_csv("~/Lab_Data/nutrient/no2no3po4_all_station.csv")
 
@@ -90,8 +89,8 @@ temperature =
                                      "Mushima (Old port)" ,
                                      "Mushima (New port)" ))) 
 
-# write_csv(df1, "../soturon_2019/Modified_data/prymary_production.csv")
 
+df1 = kamigoto
 df1 = 
   df1 %>% 
   ungroup() %>% 
@@ -107,8 +106,7 @@ df1 =
                                      "Arikawa (Zostera)",
                                      "Arikawa (Sargassum)",
                                      "Mushima (Old port)" ,
-                                     "Mushima (New port)" ))) %>% 
-  select(-X1)
+                                     "Mushima (New port)" )))
 
 # アマモ場と六島のデータを外します。----
 
@@ -121,7 +119,8 @@ alldata =
 alldata = 
   alldata %>% 
   mutate(log_ppfd = log(ppfd)) %>% 
-  drop_na()
+  drop_na() %>% 
+  select(-`0m`, -`1m`)
 
 # 光合成光曲線の解析 ----
 # 箇々では NEP の方を解析しています。
@@ -144,7 +143,7 @@ pecurve2 = function(x, w, pmax, alpha, rd, dpmax, dalpha, drd) {
 
 # variable = 6 は dset01 の ppfd の行です。
 preview(value ~ pecurve(ppfd, pmax, alpha, rd),
-        start = list(pmax = 10, alpha = 1, rd = 5),
+        start = list(pmax = 12, alpha = 1, rd = 5),
         data = dset01,
         variable = 6)
 
@@ -202,3 +201,31 @@ dset01 %>%
   facet_rep_wrap("location")
 
 dset01 %>% pull(ppfd) %>% range()
+
+
+# 水温------------------------------------------------
+
+ggplot(dset01)+
+  geom_point(aes(x = temperature, y= value, color = location))+
+  facet_rep_wrap("location")
+
+dset01 %>% 
+  ggplot(aes(x = temperature,
+           y = value, 
+           color = location)) +
+  geom_point() +
+  geom_smooth(method = "glm", 
+              formula = y ~ x)  + 
+  facet_rep_wrap("location")
+
+gam00 = gam(value ~ s(temperature),
+            data = dset01)   # 帰無仮説：location の影響はない
+gam01 = gam(value ~ s(temperature) + location, 
+            data = dset01) # 対立仮設：location の影響はある
+gam02 = gam(value ~ s(temperature, by = location) + location, 
+            data = dset01) # 対立仮設：location の影響はある
+
+anova(gam00, gam01, gam02, test = "F")
+summary(gam02)
+
+
