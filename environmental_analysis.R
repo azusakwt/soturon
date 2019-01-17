@@ -116,6 +116,13 @@ pecurve = function(x, pmax, alpha, rd) {
   pmax * (1-exp(-alpha / pmax * x)) + rd
 }
 
+pecurve2 = function(x, w, pmax, alpha, rd, dpmax, dalpha, drd) {
+  PMAX =  pmax + dpmax*(w == 2)
+  ALPHA = alpha + dalpha*(w == 2)
+  RD = rd + drd*(w == 2)
+  
+  PMAX * (1- exp(-ALPHA/PMAX * x)) + RD
+}
 
 # variable = 6 は dset01 の ppfd の行です。
 preview(value ~ pecurve(ppfd, pmax, alpha, rd),
@@ -123,18 +130,17 @@ preview(value ~ pecurve(ppfd, pmax, alpha, rd),
         data = dset01,
         variable = 6)
 
+# factor をリセット
+dset01 = dset01 %>% mutate(location = factor(location))
 dset01 = dset01 %>% mutate(idx = as.numeric(location))
 
-# factor をリセット
-dset01 %>% mutate(location = factor(location)) %>%  pull(location)
 
 # 
 preview(value ~
-          pecurve(ppfd, pmax[1], alpha[1], rd[1])*(idx == 1) +
-          pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 2),
-        start = list(pmax = c(12, 12),
-                     alpha = c(0.5,0.5),
-                     rd = c(1,1)),
+          pecurve2(ppfd, idx, pmax, alpha, rd,
+                   dpmax, dalpha, drd),
+        start = list(pmax = 12, alpha = 0.5, rd = 1,
+                     dpmax = 1, dalpha = 0.1, drd = 0.1),
         data = dset01,
         variable = 6)
 
@@ -146,64 +152,18 @@ nullmodel =
 
 fullmodel = 
   nls(value ~ 
-          pecurve(ppfd, pmax[1], alpha[1], rd[1])*(idx == 1) +
-          pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 2),
-        start = list(pmax = c(12,12), 
-                     alpha = c(0.5,0.5), 
-                     rd = c(2,2)),
+        pecurve2(ppfd, idx, pmax, alpha, rd,
+                 dpmax, dalpha, drd),
+      start = list(pmax = 12, alpha = 0.5, rd = 1,
+                   dpmax = 1, dalpha = 0.1, drd = 0.1),
         data = dset01)
 
 anova(nullmodel, fullmodel, test = "F")
 summary(fullmodel)
 
-CFS = coefficients(summary(fullmodel))
-Estimate = CFS[1:4,"Estimate"]
-SE = CFS[1:4, "Std. Error"]
-
-
-# Estimate の高い純からペアを組んで比較する
-Estimate %>% sort(index.return = T)
-
-# 新港 - 有川
-zval1 = (Estimate[4] - Estimate[2]) / sqrt(SE[4]^2 + SE[2]^2) # Z値
-
-# 有川 - 鯛ノ浦
-zval2 = (Estimate[2] - Estimate[1]) / sqrt(SE[2]^2 + SE[1]^2) # Z値
-
-# 鯛ノ浦 - 六島旧港
-zval3 = (Estimate[1] - Estimate[3]) / sqrt(SE[1]^2 + SE[3]^2) # Z値
-
-tibble(compare = c("新港 - 有川", "有川 - 鯛ノ浦", "鯛ノ浦 - 旧港"),
-       zval = c(zval1, zval2, zval3)) %>% 
-  mutate(pval = 2 * pnorm(abs(zval), lower.tail = F))
-
-CFS = coefficients(summary(fullmodel))
-Estimate = CFS[5:8,"Estimate"]
-SE = CFS[5:8, "Std. Error"]
-
-
-# Estimate の高い純からペアを組んで比較する
-Estimate %>% sort(index.return = T)
-
-# 新港 - 旧港
-zval1 = (Estimate[4] - Estimate[3]) / sqrt(SE[4]^2 + SE[3]^2) # Z値
-
-# 旧港 - 有川
-zval2 = (Estimate[3] - Estimate[2]) / sqrt(SE[3]^2 + SE[2]^2) # Z値
-
-# 有川 - 鯛ノ浦
-zval3 = (Estimate[2] - Estimate[1]) / sqrt(SE[2]^2 + SE[1]^2) # Z値
-
-tibble(compare = c("新港 - 旧港", "旧港 - 有川浦", "有川 - 鯛ノ浦"),
-       zval = c(zval1, zval2, zval3)) %>% 
-  mutate(pval = 2 * pnorm(abs(zval), lower.tail = F))
-
-
-
-
 dset01_nd = 
   dset01 %>% 
-  expand(ppfd = seq(0, 80, length = 101), idx)
+  expand(ppfd = seq(0, 30, length = 101), idx)
 
 dset01_nd  = 
   dset01_nd %>% 
@@ -211,12 +171,9 @@ dset01_nd  =
 
 dset01_nd = dset01_nd %>% 
   mutate(location = factor(idx,
-                           levels = 1:5,
+                           levels = 1:2,
                            labels = c("Tainoura (Isoyake)",
-                                      "Arikawa (Zostera)",
-                                      "Arikawa (Sargassum)",
-                                      "Mushima (Old port)" ,
-                                      "Mushima (New port)" )))
+                                      "Arikawa (Sargassum)")))
 
 dset01 %>%  
   ggplot() +
@@ -226,69 +183,4 @@ dset01 %>%
             data = dset01_nd) +
   facet_rep_wrap("location")
 
-
-
-
-
-
-# ここから下は検討中
-
-dset01 = alldata %>% filter(str_detect(key, "GEP"))
-
-m0 = glm(value ~ 1, data = dset01)
-m1 = glm(value ~ ppfd + location, data = dset01)
-m2 = glm(value ~ ppfd + temperature + location, data = dset01)
-m3 = glm(value ~ ppfd * temperature * location, data = dset01)
-
-anova(m0, m1, m2, m3, test = "F")
-summary(m3)
-plot(m3)
-
-# 主成分解析
-# https://logics-of-blue.com/principal-components-analysis/
-
-dset01 = dset01 %>% mutate(log_ppfd = log(ppfd))
-
-
-m0 = glm(value ~ 1, data = dset01)
-m1 = glm(value ~ log_ppfd + location, data = dset01)
-m2 = glm(value ~ log_ppfd + temperature + location, data = dset01)
-m3 = glm(value ~ log_ppfd * temperature * location, data = dset01)
-
-anova(m0, m1, m2, m3, test = "F")
-summary(m3)
-plot(m3)
-
-dset01_mat = 
-  dset01 %>% 
-  select(temperature, log_ppfd) %>% 
-  as.matrix() 
-
-pout = princomp(dset01_mat, cor = TRUE)
-plot(pout)
-biplot(pout)
-
-length(pout$scores[,1])
-
-dset01 = 
-  dset01 %>% 
-  mutate(comp1 = pout$scores[,1],
-         comp2 = pout$scores[,2])
-
-dset01 %>% pull(value) %>% range()
-
-ggplot(dset01) +
-  geom_point(aes(x = comp2, 
-                 y = value,
-                 color = location)) +
-  geom_smooth(aes(x = comp2, y = value, group = location),
-              method = "glm",
-              formula = y~x)  +
-  facet_wrap("location")
-
-
-m0 = glm(value ~ (comp1 + comp2) , data = dset01)
-m1 = glm(value ~ (comp1 + comp2) * location, data = dset01)
-anova(m0, m1, test = "F")
-summary(m1)
-
+dset01 %>% pull(ppfd) %>% range()
