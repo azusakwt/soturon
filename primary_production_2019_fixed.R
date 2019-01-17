@@ -246,11 +246,11 @@ ggsave(filename = "年間呼吸量.png",
        units = "mm")
 
 
-dset01 = 
+dset02 = 
   df1  %>% 
   filter(str_detect("RP", key))
 
-dset01 %>% 
+dset02 %>% 
   ggplot(aes(x = month,
              y = value, 
              color = location,
@@ -284,13 +284,13 @@ dset01 %>%
 
 gam00 = gam(value ~ s(month, bs = "cc"), 
             family = Gamma(link = "log"), 
-            data = dset01)   # 帰無仮説：location の影響はない
+            data = dset02)   # 帰無仮説：location の影響はない
 gam01 = gam(value ~ s(month, bs = "cc") + location, 
             family = Gamma(link = "log"),
-            data = dset01) # 対立仮設：location の影響はある
+            data = dset02) # 対立仮設：location の影響はある
 gam02 = gam(value ~ s(month, bs = "cc", by = location) + location, 
             family = Gamma(link = "log"),
-            data = dset01)
+            data = dset02)
 #
 
 # F検定をつかって，二つのモデルの比較
@@ -329,11 +329,11 @@ ggsave(filename = "生態系純一次生産量.png",
        height = HEIGHT,
        units = "mm")
 
-dset01 = 
+dset03 = 
   df1  %>% 
   filter(str_detect("NEP", key))
 
-dset01 %>% 
+dset03 %>% 
   ggplot(aes(x = month,
              y = value, 
              color = location,
@@ -364,11 +364,11 @@ dset01 %>%
 # URL: https://logics-of-blue.com/平滑化スプラインと加法モデル/ 
 
 gam00 = gam(value ~ s(month, bs = "cc"),
-            data = dset01)   # 帰無仮説：location の影響はない
+            data = dset03)   # 帰無仮説：location の影響はない
 gam01 = gam(value ~ s(month, bs = "cc") + location, 
-            data = dset01) # 対立仮設：location の影響はある
+            data = dset03) # 対立仮設：location の影響はある
 gam02 = gam(value ~ s(month, bs = "cc", by = location) + location, 
-            data = dset01) # 対立仮設：location の影響はある
+            data = dset03) # 対立仮設：location の影響はある
 # F検定をつかって，二つのモデルの比較
 
 anova(gam00, gam01, gam02, test = "F")
