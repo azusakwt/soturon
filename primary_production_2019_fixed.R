@@ -62,7 +62,10 @@ gtitle = "Gross Ecosystem Production"
 
 dset01 = 
   df1  %>% 
-  filter(str_detect("GEP", key)) 
+  filter(str_detect("GEP", key)) %>% 
+  spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
+  
 
 dset01 %>% 
   ggplot(aes(x = month,
@@ -173,7 +176,7 @@ ggplot() +
   theme(axis.text.x = element_text(size = rel(0.8))) +
   facet_wrap("location", nrow = 1)
 
-ggsave(filename = "GAM入り年間総一次生産量.png", 
+ggsave(filename = "GAM入り年間総一次生産量(0m+1m).png", 
        width = WIDTH,
        height = HEIGHT,
        units = "mm")
@@ -186,7 +189,9 @@ gtitle = "Respiration Production"
 
 dset02 = 
   df1  %>% 
-  filter(str_detect("RP", key))
+  filter(str_detect("RP", key)) %>% 
+  spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
 
 dset02 %>% 
   ggplot(aes(x = month,
@@ -244,7 +249,9 @@ gtitle = "Net Ecosystem Production"
 
 dset03 = 
   df1  %>% 
-  filter(str_detect("NEP", key))
+  filter(str_detect("NEP", key)) %>% 
+  spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
 
 dset03 %>% 
   ggplot(aes(x = month,
