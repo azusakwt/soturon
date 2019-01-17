@@ -32,6 +32,7 @@ df1 =
                                      "Arikawa (Sargassum)"))) 
 
 df1 = df1 %>% filter(!str_detect(location, "Zostera")) 
+df1 = df1 %>% mutate(location = factor(location)) # 外した要因のレベルも外す
 df1 %>% pull(location)
 # 解析（案）-------------------------------------------------------------------------------------------------
 library(mgcv) # GAM 解析用パッケージ
@@ -59,44 +60,6 @@ xlabel = ""
 ylabel = expression("GEP"~(g~O[2]~m^{-2}~day^{-1}))
 gtitle = "Gross Ecosystem Production"
 
-p1 =
-df1  %>% 
-  filter(str_detect("GEP", key)) %>% 
-  ggplot(aes(x = month,
-             y = value, 
-             color = location)) +
-  geom_point() +
-  geom_smooth(method = "gam", 
-              formula = y ~ s(x, bs = "cc"),
-              method.args = list(family = Gamma(link = "log")))  + 
-  scale_x_continuous(xlabel, 
-                     breaks = 1:12,
-                     labels = month.abb[1:12]) +
-  scale_y_continuous(ylabel) +
-  scale_color_brewer(palette = "Dark2") +
-  guides(color = FALSE) +
-  facet_rep_grid(location ~ .) +
-  theme(axis.line = element_line())
-
-
-df1  %>% 
-  filter(str_detect("GEP", key)) %>% 
-  ggplot(aes(x = month,
-             y = value, 
-             color = key)) +
-  geom_point() +
-  geom_smooth(method = "glm", 
-              formula = y ~ x,
-              method.args = list(family = Gamma(link = "log")))  + 
-  scale_x_continuous(xlabel, 
-                     breaks = 1:12,
-                     labels = month.abb[1:12]) +
-  scale_y_continuous(ylabel) +
-  guides(color = FALSE) +
-  facet_grid(location ~ .)
-
-df1 %>% spread(key, value)
-
 dset01 = 
   df1  %>% 
   filter(str_detect("GEP", key)) 
@@ -104,7 +67,7 @@ dset01 =
 dset01 %>% 
   ggplot(aes(x = month,
              y = value, 
-             color = location,
+              color = location,
              fill = location)) +
   # geom_point(aes(group = month), alpha = 0.5) +
   geom_boxplot(aes(group = month), 
@@ -221,31 +184,6 @@ xlabel = ""
 ylabel = expression("RP"~(g~O[2]~m^{-2}~day^{-1}))
 gtitle = "Respiration Production"
 
-p2 = df1  %>% 
-  filter(str_detect("RP", key)) %>% 
-  ggplot(aes(x = month,
-             y = value, 
-             color = location)) +
-  geom_point() +
-  geom_smooth(method = "gam", 
-              formula = y ~ s(x, bs = "cc"),
-              method.args = list(family = Gamma(link = "log")))  + 
-  scale_x_continuous(xlabel, 
-                     breaks = 1:12,
-                     labels = month.abb[1:12]) +
-  scale_y_continuous(ylabel) +
-  scale_color_brewer(palette = "Dark2") +
-  guides(color = FALSE) +
-  facet_rep_grid(location ~ .) +
-  theme(axis.line = element_line())
-
-ggsave(filename = "年間呼吸量.png", 
-       plot = p2,
-       width = WIDTH,
-       height = HEIGHT,
-       units = "mm")
-
-
 dset02 = 
   df1  %>% 
   filter(str_detect("RP", key))
@@ -303,31 +241,6 @@ summary(gam02)
 xlabel = ""
 ylabel = expression("NEP"~(g~O[2]~m^{-2}~day^{-1}))
 gtitle = "Net Ecosystem Production"
-
-p3 = 
-  df1  %>% 
-  filter(str_detect("NEP", key)) %>% 
-  filter(!str_detect(location, "Zostera")) %>% 
-  ggplot(aes(x = month,
-             y = value, 
-             color = location)) +
-  geom_point() +
-  geom_smooth(method = "gam", 
-              formula = y ~ s(x, bs = "cc"))  + 
-  scale_x_continuous(xlabel, 
-                     breaks = 1:12,
-                     labels = month.abb[1:12]) +
-  scale_y_continuous(ylabel) +
-  scale_color_brewer(palette = "Dark2") +
-  guides(color = FALSE) +
-  facet_rep_wrap("location", nrow = 1) +
-  theme(axis.line = element_line())
-
-ggsave(filename = "生態系純一次生産量.png", 
-       plot = p3,
-       width = WIDTH,
-       height = HEIGHT,
-       units = "mm")
 
 dset03 = 
   df1  %>% 
