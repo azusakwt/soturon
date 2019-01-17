@@ -3,11 +3,12 @@
 # 2019-01-16
 
 
-# 図の寸法
+# 図の寸法 ----
 # A5寸法
 WIDTH = 297/2
 HEIGHT = 210/2
-# パッケージの読み込み
+
+# パッケージの読み込み ----
 library(tidyverse)
 library(lubridate)
 library(readxl)
@@ -15,8 +16,9 @@ library(stringr)
 library(mgcv) # GAM 解析用パッケージ
 library(lemon)
 library(ggfortify)
+library(nlstools) # 非線形モデルの当てはめに役立つパッケージ
 
-#データの読み込み
+# データの読み込み ----
 kamigoto = read_csv("Modified_data/kamigoto_production.csv")
 mushima = read_csv("Modified_data/mushima_production.csv")
 df1 = bind_rows(kamigoto,mushima)
@@ -90,46 +92,51 @@ df1 =
                                      "Mushima (New port)" ))) %>% 
   select(-X1)
 
-
+# アマモ場と六島のデータを外します。----
 
 alldata = 
   full_join(df1, light, by = c("location","month", "Date")) %>% 
   full_join(temperature, by = c("location", "month", "Date")) %>% 
-  filter(!str_detect(location, "Zostera"))
+  filter(!str_detect(location, "Zostera")) %>% 
+  filter(!str_detect(location, "Mushima"))
 
 alldata = 
   alldata %>% 
   mutate(log_ppfd = log(ppfd)) %>% 
   drop_na()
 
+# 光合成光曲線の解析 ----
+# 箇々では NEP の方を解析しています。
 
-##########################################
 dset01 = alldata %>% filter(str_detect(key, "NEP"))
+
+# 光合成光曲線の関数
 
 pecurve = function(x, pmax, alpha, rd) {
   pmax * (1-exp(-alpha / pmax * x)) + rd
 }
 
-library(nlstools)
 
-# preview(value ~ pecurve(ppfd, pmax, alpha, rd),
-#         start = list(pmax = 10, alpha = 1, rd = 5),
-#         data = dset01, 
-#         variable = 6)
+# variable = 6 は dset01 の ppfd の行です。
+preview(value ~ pecurve(ppfd, pmax, alpha, rd),
+        start = list(pmax = 10, alpha = 1, rd = 5),
+        data = dset01,
+        variable = 6)
 
 dset01 = dset01 %>% mutate(idx = as.numeric(location))
 
+# factor をリセット
+dset01 %>% mutate(location = factor(location)) %>%  pull(location)
+
 # 
-# preview(value ~ 
-#           pecurve(ppfd, pmax[1], alpha[1], rd[1])*(idx == 1) +
-#           pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 3) +
-#           pecurve(ppfd, pmax[3], alpha[3], rd[3])*(idx == 4) +
-#           pecurve(ppfd, pmax[4], alpha[4], rd[4])*(idx == 5) ,
-#         start = list(pmax = c(40,25,20,20), 
-#                      alpha = c(0.5,0.5,0.5,0.5), 
-#                      rd = c(1,1,1,1)),
-#         data = dset01, 
-#         variable = 6)
+preview(value ~
+          pecurve(ppfd, pmax[1], alpha[1], rd[1])*(idx == 1) +
+          pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 2),
+        start = list(pmax = c(12, 12),
+                     alpha = c(0.5,0.5),
+                     rd = c(1,1)),
+        data = dset01,
+        variable = 6)
 
 nullmodel = 
   nls(value ~ 
@@ -140,12 +147,10 @@ nullmodel =
 fullmodel = 
   nls(value ~ 
           pecurve(ppfd, pmax[1], alpha[1], rd[1])*(idx == 1) +
-          pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 3) +
-          pecurve(ppfd, pmax[3], alpha[3], rd[3])*(idx == 4) +
-          pecurve(ppfd, pmax[4], alpha[4], rd[4])*(idx == 5) ,
-        start = list(pmax = c(10,15,5,20), 
-                     alpha = c(0.5,0.5,0.5,0.5), 
-                     rd = c(5,5,5,5)),
+          pecurve(ppfd, pmax[2], alpha[2], rd[2])*(idx == 2),
+        start = list(pmax = c(12,12), 
+                     alpha = c(0.5,0.5), 
+                     rd = c(2,2)),
         data = dset01)
 
 anova(nullmodel, fullmodel, test = "F")
