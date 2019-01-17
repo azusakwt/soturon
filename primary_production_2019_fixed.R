@@ -34,6 +34,12 @@ df1 =
 df1 = df1 %>% filter(!str_detect(location, "Zostera")) 
 df1 = df1 %>% mutate(location = factor(location)) # 外した要因のレベルも外す
 df1 %>% pull(location)
+
+df1 = df1 %>% spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
+
+# write_csv(df1,"../soturon_2019/Modified_data/primary_production_0m+1m.csv")
+
 # 解析（案）-------------------------------------------------------------------------------------------------
 library(mgcv) # GAM 解析用パッケージ
 # GEPとRP は正の値しか取れないので，Gamma 分布
@@ -249,9 +255,7 @@ gtitle = "Net Ecosystem Production"
 
 dset03 = 
   df1  %>% 
-  filter(str_detect("NEP", key)) %>% 
-  spread(position, value) %>% 
-  mutate(value = `1m`+`0m`)
+  filter(str_detect("NEP", key))
 
 dset03 %>% 
   ggplot(aes(x = month,
@@ -279,9 +283,11 @@ dset03 %>%
   theme(axis.text.x = element_text(size = rel(0.8))) +
   facet_wrap("location", nrow = 1)
 
-# Gamma 分布のデフォルトのリンク関数は 1/y
-# URL: http://hosho.ees.hokudai.ac.jp/~kubo/log/2009/kubolog20091212.html
-# URL: https://logics-of-blue.com/平滑化スプラインと加法モデル/ 
+ggsave(filename = "GAM入り年間純一次生産量(0m+1m).png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
+
 
 gam00 = gam(value ~ s(month, bs = "cc"),
             data = dset03)   # 帰無仮説：location の影響はない
@@ -292,8 +298,7 @@ gam02 = gam(value ~ s(month, bs = "cc", by = location) + location,
 # F検定をつかって，二つのモデルの比較
 
 anova(gam00, gam01, gam02, test = "F")
-summary(gam01)
-
+summary(gam02)
 
 
 
