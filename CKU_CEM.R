@@ -125,7 +125,9 @@ ggsave(filename = "流速.png",
        units = "mm")
 
 # write_csv(cem, "../soturon_2019/Modified_data/CEM_fixed.csv")
-
+#年間の平均
+cem %>% group_by(location) %>% drop_na() %>% 
+  summarise(mean(mean_speed))
 
 #CKU-------------------------------------------------------------------
 #読み込み
@@ -207,6 +209,10 @@ ggsave(filename = "クロロフィル蛍光.png",
        height = HEIGHT,
        units = "mm")
 
+#年間の平均
+cku %>% group_by(location) %>%drop_na() %>%  
+  summarise(mean(mean_chla))
+
 #濁度
 xlabel = ""
 ylabel = expression("tubidity"~ppm~L^{-1})
@@ -238,7 +244,9 @@ ggsave(filename = "濁度.png",
        height = HEIGHT,
        units = "mm")
 
-
+#年間の平均
+cku %>% group_by(location) %>% drop_na() %>% 
+  summarise(mean(mean_tur))
 
 # write_csv(cku,"../soturon_2019/Modified_data/CKU_fixed.csv")
 
