@@ -17,11 +17,28 @@ library(mgcv) # GAM 解析用パッケージ
 library(lemon)
 library(ggfortify)
 library(nlstools) # 非線形モデルの当てはめに役立つパッケージ
+library(glue)
 
 # データの読み込み ----
+# kamigoto & mushima のサンプリング日と nutrient のサンプリン日は
+# 異なるので，そのまま full_join() できない。
 kamigoto = read_csv("Modified_data/primary_production_0m+1m.csv")
 mushima = read_csv("Modified_data/mushima_production.csv")
-df1 = bind_rows(kamigoto,mushima)
+nutrient = read_csv("~/Lab_Data/nutrient/no2no3po4_all_station.csv")
+
+nutrient_summary =
+  nutrient %>% 
+  rename(Date = date) %>% 
+  mutate(variable = as.character(glue("{station} ({variable})")),
+         month = month(Date),
+         conc = ifelse(conc < 0, 0, conc)) %>% 
+  group_by(variable, Date, Nutrient) %>% 
+  summarise(conc = mean(conc)) %>% 
+  mutate(month = month(Date)) %>% 
+  ungroup() %>% 
+  filter(str_detect(variable, "Isoyake|Sargassum"))
+
+df1 = bind_rows(kamigoto, mushima)
 
 # cem = read_csv("Modified_data/CEM_fixed.csv")
 # cku = read_csv("Modified_data/CKU_fixed.csv")
@@ -126,7 +143,7 @@ pecurve2 = function(x, w, pmax, alpha, rd, dpmax, dalpha, drd) {
 
 # variable = 6 は dset01 の ppfd の行です。
 preview(value ~ pecurve(ppfd, pmax, alpha, rd),
-        start = list(pmax = 12, alpha = 1, rd = 5),
+        start = list(pmax = 15, alpha = 3, rd = 2),
         data = dset01,
         variable = 6)
 
@@ -139,7 +156,7 @@ dset01 = dset01 %>% mutate(idx = as.numeric(location))
 preview(value ~
           pecurve2(ppfd, idx, pmax, alpha, rd,
                    dpmax, dalpha, drd),
-        start = list(pmax = 12, alpha = 0.5, rd = 1,
+        start = list(pmax = 15, alpha = 3, rd = 2,
                      dpmax = 1, dalpha = 0.1, drd = 0.1),
         data = dset01,
         variable = 6)
@@ -147,16 +164,16 @@ preview(value ~
 nullmodel = 
   nls(value ~ 
         pecurve(ppfd, pmax, alpha, rd),
-      start = list(pmax = 10,alpha = 0.5, rd = 5),
+      start = list(pmax = 15,alpha = 3, rd = 2),
       data = dset01)
 
 fullmodel = 
   nls(value ~ 
         pecurve2(ppfd, idx, pmax, alpha, rd,
                  dpmax, dalpha, drd),
-      start = list(pmax = 12, alpha = 0.5, rd = 1,
+      start = list(pmax = 15, alpha = 3, rd = 2,
                    dpmax = 1, dalpha = 0.1, drd = 0.1),
-        data = dset01)
+      data = dset01)
 
 anova(nullmodel, fullmodel, test = "F")
 summary(fullmodel)
@@ -185,6 +202,7 @@ dset01 %>%
 
 dset01 %>% pull(ppfd) %>% range()
 
+write_csv(dset01, "./Modified_data/data_for_nls_model.csv")
 
 # 水温------------------------------------------------
 

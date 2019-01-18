@@ -40,7 +40,7 @@ oxygen_file = data_frame(file = fnames)
 oxygen = oxygen_file %>% 
   mutate(oxygen = map(file,
                       read_csv))
-oxygen %>% slice(1) %>% unnest()
+oxygen %>% slice(17) %>% unnest() %>% print(n = 300)
 # 光データの読み込み--------------------------------------------------------------------------------------
 
 light = read_csv("Modified_data/light_calibrate.csv")
@@ -81,6 +81,11 @@ tmp = tmp %>%
   select(Date, location, datetime, position.x,
          rate, oxygen, temperature, ppfd, H, light_group) %>% 
   rename(position = position.x)
+tmp %>% 
+  group_by(Date, location, position) %>% 
+  nest() %>% 
+  print(n = Inf)
+# write_csv(tmp, "~/Lab_Data/kawatea/raw_rate_data.csv")
 
 tmp = 
   tmp %>% 
