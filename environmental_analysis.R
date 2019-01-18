@@ -143,7 +143,7 @@ pecurve2 = function(x, w, pmax, alpha, rd, dpmax, dalpha, drd) {
 
 # variable = 6 は dset01 の ppfd の行です。
 preview(value ~ pecurve(ppfd, pmax, alpha, rd),
-        start = list(pmax = 12, alpha = 1, rd = 5),
+        start = list(pmax = 15, alpha = 3, rd = 2),
         data = dset01,
         variable = 6)
 
@@ -156,7 +156,7 @@ dset01 = dset01 %>% mutate(idx = as.numeric(location))
 preview(value ~
           pecurve2(ppfd, idx, pmax, alpha, rd,
                    dpmax, dalpha, drd),
-        start = list(pmax = 12, alpha = 0.5, rd = 1,
+        start = list(pmax = 15, alpha = 3, rd = 2,
                      dpmax = 1, dalpha = 0.1, drd = 0.1),
         data = dset01,
         variable = 6)
@@ -164,14 +164,14 @@ preview(value ~
 nullmodel = 
   nls(value ~ 
         pecurve(ppfd, pmax, alpha, rd),
-      start = list(pmax = 10,alpha = 0.5, rd = 5),
+      start = list(pmax = 15,alpha = 3, rd = 2),
       data = dset01)
 
 fullmodel = 
   nls(value ~ 
         pecurve2(ppfd, idx, pmax, alpha, rd,
                  dpmax, dalpha, drd),
-      start = list(pmax = 12, alpha = 0.5, rd = 1,
+      start = list(pmax = 15, alpha = 3, rd = 2,
                    dpmax = 1, dalpha = 0.1, drd = 0.1),
       data = dset01)
 
@@ -202,6 +202,7 @@ dset01 %>%
 
 dset01 %>% pull(ppfd) %>% range()
 
+write_csv(dset01, "./Modified_data/data_for_nls_model.csv")
 
 # 水温------------------------------------------------
 
