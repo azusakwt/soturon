@@ -395,6 +395,9 @@ ggsave(filename = "光環境.png",
        height = HEIGHT,
        units = "mm")  
 
-
+#年間を通しての平均
+dset_daily %>%
+  group_by(location) %>% 
+  summarise(mean(daily_ppfd))
 
 
