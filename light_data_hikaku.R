@@ -323,8 +323,27 @@ dset %>% filter(str_detect(location, "tainoura")) %>% unnest()
 dset %>% unnest() %>% select(location, position, Date, ppfd, datetime, H) %>% 
   write_csv(path = "Modified_data/light_calibrate.csv")
   
-  
+dset_daily = dset_daily %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3,
+                           "mushima2" = 4,
+                           "mushima3" = 5)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3,4,5),
+                           label = c("Tainoura (Isoyake)",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa (Sargassum)",
+                                     "Mushima (Old port)" ,
+                                     "Mushima (New port)" ))) 
 
+
+dset_daily =
+  dset_daily %>% 
+  filter(!str_detect(location, "Zostera")) %>% 
+  filter(!str_detect(location, "Mushima"))
 #作図----------------------------------
 #お試し
 ggplot(dset_daily)+
@@ -344,12 +363,11 @@ dset_daily %>%
   guides(color = FALSE) +
   theme(axis.line = element_line())
 
-#使うかな・・・・・
+#使う
 xlabel = ""
 ylabel = expression("PPFD"~(mol~m^{-1}~day^{-1}))
 gtitle = "Daily PPFD"
 
-p1=
 dset_daily %>%
   mutate(month = month(Date)) %>% 
   group_by(month, location) %>% 
@@ -363,8 +381,8 @@ dset_daily %>%
                      breaks = 1:12,
                      limits = c(1,12)) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 40),
-                     breaks = c(0, 10, 20, 30,40)) +
+                     limits = c(0, 20),
+                     breaks = c(0, 5, 10, 15, 20)) +
   scale_fill_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
   theme(legend.position = c(1,1),
@@ -373,21 +391,9 @@ dset_daily %>%
         legend.background = element_blank())
 
 ggsave(filename = "光環境.png", 
-       plot = p1,
        width = WIDTH,
        height = HEIGHT,
        units = "mm")  
-
-#############################
-
-ggplot(dset_daily)+
-  geom_boxplot(aes(x = location, 
-                   y=daily_ppfd, 
-                   fill=location,
-                   group=interaction(location)))
-
-
-
 
 
 
