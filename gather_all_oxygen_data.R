@@ -4,7 +4,7 @@ library(lubridate)
 library(glue)
 
 
-col_names = c("n", "datetime", "mgl", "temperature")
+col_names = c("n", "datetime", "oxygen", "temperature")
 col_type_csv = "ncnn"
 col_type_xlsx = c("numeric", "text", "numeric", "numeric")
 d1 = 
