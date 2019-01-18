@@ -35,21 +35,13 @@ WIDTH = 297/2
 HEIGHT = 210/2
 
 # 溶存酸素のデータの読み込み --------------------------------------------------------------------------------------
-fnames = dir("~/Lab_Data/kawatea/Modified_Data/",pattern = "kamigoto_oxygen",full=T)
-oxygen_file = data_frame(file = fnames)
-oxygen = oxygen_file %>% 
-  mutate(oxygen = map(file,
-                      read_csv))
-oxygen %>% slice(17) %>% unnest() %>% print(n = 300)
+oxygen = read_csv("~/Lab_Data/kawatea/Modified_Data/kamigoto_oxygen_all.csv")
+oxygen %>% print(n = 10)
 # 光データの読み込み--------------------------------------------------------------------------------------
 
 light = read_csv("Modified_data/light_calibrate.csv")
 
-
 #----------------------------------------------
-oxygen =
-  oxygen %>% unnest() %>% 
-  select(-file)
 
 oxygen %>% pull(location) %>% unique()
 light %>% pull(location) %>% unique()
@@ -61,7 +53,7 @@ light %>% pull(position) %>% unique()
 tmp =
   inner_join(oxygen %>% filter(str_detect(position, "[(0m)(1m)]")), 
              light  %>% filter(str_detect(position, "0m")), 
-             by = c("datetime", "location","Date")) 
+             by = c("datetime", "location","Date", "H")) 
 
 tmp %>% filter(str_detect(location, "tainoura"))
 
@@ -75,16 +67,13 @@ oxygen %>%
   group_by(Date, location, position) %>% nest() %>% 
   slice(1:10) %>% unnest() %>% 
   ggplot(aes(x = datetime, y=oxygen, color = position)) +
-  geom_line()
+  geom_point()
 
 tmp = tmp %>%
   select(Date, location, datetime, position.x,
          rate, oxygen, temperature, ppfd, H, light_group) %>% 
   rename(position = position.x)
-tmp %>% 
-  group_by(Date, location, position) %>% 
-  nest() %>% 
-  print(n = Inf)
+
 # write_csv(tmp, "~/Lab_Data/kawatea/raw_rate_data.csv")
 
 tmp = 
@@ -92,8 +81,6 @@ tmp =
   group_by(Date, location, position, light_group) %>%
   summarise(rate_sum = sum(rate* 1),
             duration_hours = length(rate) / 6) 
-
-tmp
 
 tmp =
   tmp %>% 
