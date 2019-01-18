@@ -58,8 +58,8 @@ cem = cem_file %>%
                       read_csv))
 
 cem = cem %>% unnest() %>% 
-  # select(-file) %>% 
-  # rename(datetime = datetime2) %>% 
+  select(-file) %>%
+  rename(datetime = datetime2) %>%
   mutate(Date = as.Date(datetime))
 
 #1日分のデータは144
@@ -98,7 +98,7 @@ xlabel = ""
 ylabel = expression("Velocity"~cm~sec^{-1})
 gtitle = "Velocity of water"
 
-p1 = cem %>% 
+cem %>% 
   group_by(location,month) %>% 
   drop_na() %>% 
   summarise(speed = mean(mean_speed)) %>% 
@@ -120,7 +120,6 @@ p1 = cem %>%
         legend.background = element_blank())
 
 ggsave(filename = "流速.png", 
-       plot = p1,
        width = WIDTH,
        height = HEIGHT,
        units = "mm")
@@ -181,7 +180,7 @@ xlabel = ""
 ylabel = expression("chla"~μg~L^{-1})
 gtitle = "chlorophyll fluorescence"
 
-p2 = cku %>% 
+cku %>% 
   group_by(location,month) %>% 
   drop_na() %>% 
   summarise(chla = mean(mean_chla)) %>% 
@@ -207,6 +206,39 @@ ggsave(filename = "クロロフィル蛍光.png",
        width = WIDTH,
        height = HEIGHT,
        units = "mm")
+
+#濁度
+xlabel = ""
+ylabel = expression("tubidity"~ppm~L^{-1})
+gtitle = "Tubidty"
+
+cku %>% 
+  group_by(location,month) %>% 
+  drop_na() %>% 
+  summarise(turbidty = mean(mean_tur)) %>% 
+  ggplot()+
+  geom_point(aes(x = month, y = turbidty, color = location))+
+  geom_line(aes(x = month, y = turbidty, color = location))+
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(1,12)) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 70),
+                     breaks = c(0, 10, 20,30, 40, 50, 60, 70)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())
+
+ggsave(filename = "濁度.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
+
+
 
 # write_csv(cku,"../soturon_2019/Modified_data/CKU_fixed.csv")
 
