@@ -205,28 +205,59 @@ dset01 %>% pull(ppfd) %>% range()
 write_csv(dset01, "./Modified_data/data_for_nls_model.csv")
 
 # 水温------------------------------------------------
+xlabel = ""
+ylabel = expression(Temperature~~(C*degree))
+gtitle = "Temperature"
+alldata %>%
+  mutate(month = month(Date)) %>% 
+  group_by(location, month) %>% 
+  summarise(temperature = mean(temperature)) %>% 
+  ggplot() +
+  geom_line(aes(x = month, y = temperature, color =location))+
+  scale_x_continuous(xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(1,12)) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 30),
+                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())
 
-ggplot(dset01)+
-  geom_point(aes(x = temperature, y= value, color = location))+
-  facet_rep_wrap("location")
+ggsave(filename = "水温.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
 
-dset01 %>% 
-  ggplot(aes(x = temperature,
-           y = value, 
-           color = location)) +
-  geom_point() +
-  geom_smooth(method = "glm", 
-              formula = y ~ x)  + 
-  facet_rep_wrap("location")
+alldata %>%
+  mutate(month = month(Date)) %>% 
+  ggplot() +
+   geom_boxplot(aes(x = month,
+                   y = temperature,
+                   fill = location,
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12.5)) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 30),
+                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank()) + 
+  facet_wrap("location", nrow = 1)
 
-gam00 = gam(value ~ s(temperature),
-            data = dset01)   # 帰無仮説：location の影響はない
-gam01 = gam(value ~ s(temperature) + location, 
-            data = dset01) # 対立仮設：location の影響はある
-gam02 = gam(value ~ s(temperature, by = location) + location, 
-            data = dset01) # 対立仮設：location の影響はある
-
-anova(gam00, gam01, gam02, test = "F")
-summary(gam02)
+ggsave(filename = "水温ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
 
 
