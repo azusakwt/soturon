@@ -17,7 +17,7 @@ library(lemon)
 
 #データの読み込み
 df1 = read_csv("Modified_data/kamigoto_production.csv")
-
+light = read_csv("Modified_data/light_calibrate.csv")
 df1 = 
   df1 %>% 
   ungroup() %>% 
@@ -37,8 +37,32 @@ df1 %>% pull(location)
 
 df1 = df1 %>% spread(position, value) %>% 
   mutate(value = `1m`+`0m`)
-
+df1
 # write_csv(df1,"../soturon_2019/Modified_data/primary_production_0m+1m.csv")
+
+light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^6) %>% 
+  ungroup() %>% 
+  filter(str_detect(location, "tainoura|arikawa")) %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura (Isoyake)",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa (Sargassum)"))) 
+
+df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
+  select(Date, location, value),
+  light, by = c("Date", "location") ) %>% 
+  filter(str_detect(location, "Tainoura|Sarg"))
+
+df2 %>% mutate(month = month(Date)) %>% 
+ggplot() +
+  geom_point(aes(x = ppfd, y = value)) +
+  facet_grid(month ~ location)
+
 
 # 解析（案）-------------------------------------------------------------------------------------------------
 library(mgcv) # GAM 解析用パッケージ
@@ -59,6 +83,13 @@ df1 %>%
 
 
 df1  %>% filter(str_detect("GEP", key)) %>% pull(value) %>% range(na.rm = T)
+df1 %>% 
+  filter(str_detect(location, "Arik|Taino")) %>% 
+  group_by(location, key, month) %>% 
+  summarise(mean = mean(value, na.rm = T),
+            sd = sd(value, na.rm = T)) %>% filter(key == "NEP") %>% 
+  ungroup() %>% 
+  write_csv(path = "/home/gnishihara/Data/all_nutrient_analysis/all_nutrient_analysis/nep.csv")
 
 #GEP-----------------------------------------------------------------
 #作図
@@ -68,9 +99,7 @@ gtitle = "Gross Ecosystem Production"
 
 dset01 = 
   df1  %>% 
-  filter(str_detect("GEP", key)) %>% 
-  spread(position, value) %>% 
-  mutate(value = `1m`+`0m`)
+  filter(str_detect("GEP", key)) 
   
 
 dset01 %>% 

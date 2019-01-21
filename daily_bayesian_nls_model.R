@@ -2,6 +2,7 @@
 
 library(magrittr)
 library(tidyverse)
+library(lubridate)
 library(rstan)
 library(broom)
 library(brms)
@@ -14,6 +15,25 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = 4)
 
 dset01 = read_csv("~/Lab_Data/kawatea/raw_rate_data.csv")
+sppfd = read_csv("~/Lab_Data/kawatea/Modified_Data/surface_ppfd_all.csv")
+
+sppfd = 
+  sppfd %>% group_by(location, position) %>% nest() %>% 
+  filter(str_detect(location, "tainoura|arikawa")) 
+
+sppfd = bind_rows(sppfd, 
+          sppfd %>% filter(str_detect(location, "arikawa")) %>% 
+            mutate(location = "arikawagaramo")) %>% 
+  mutate(location = recode(location,
+                           tainoura = 1, 
+                           arikawaamamo = 2,
+                           arikawagaramo = 3)) %>%
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura (Isoyake)",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa (Sargassum)"))) %>% 
+  filter(str_detect(location, "Isoyake|Sargassum"))
 
 dset01 = 
   dset01 %>%   
@@ -28,61 +48,160 @@ dset01 =
                                      "Arikawa (Sargassum)"))) %>% 
   filter(str_detect(location, "Isoyake|Sargassum"))
 
+sppfd = 
+  sppfd %>% 
+  unnest() %>% 
+  mutate(Date = as.Date(datetime)) %>% 
+  group_by(location, Date) %>% 
+  mutate(ppfd = ppfd - min(ppfd),
+         month = month(Date))
+
 dset01 = 
   dset01 %>% 
   mutate(month = month(Date))
 
-dset01 %>% 
-  group_by(Date, location) %>% 
-  filter(light_group) %>% 
-  ggplot() +
-  geom_point(aes(x = ppfd, y = rate, group = Date), alpha = 0.25) +
-  facet_grid(location~month)
 
 
 pecurve = function(x, pmax, alpha, rd) {
   pmax * (1 - exp(-alpha/pmax * x)) - rd
 }
-try_pecurve = possibly(pecurve, NULL)
 
+dset02 = inner_join(dset01,
+                    sppfd %>% rename(sppfd = ppfd) %>% 
+                      select(location, datetime, sppfd, Date),
+                    by = c("location", "datetime", "Date"))
 
-dset01 %>% 
+dset02 = dset02 %>% mutate(ampm_group = ifelse(H < 12, "AM", "PM"))
+
+dset02 = 
+  dset02 %>% 
   group_by(Date, location, position) %>% 
   nest() %>% 
   spread(position, data) %>% 
-  slice(807) %>% unnest(`0m`) %>% 
-  print(n = Inf)
   mutate(data = map2(`0m`, `1m`, function(X, Y) {
-    
+  if(is.null(X) | is.null(Y)) {
+    NULL
+  } else {
     rate = X$rate + Y$rate
-    tibble(datetime = X$datetime, rate, X$temperature, X$ppfd, X$H, X$light_group)
-  }))
+    tibble(datetime = X$datetime, rate, 
+           temperature = X$temperature, 
+           ppfd = X$ppfd, 
+           sppfd = X$sppfd,
+           H = X$H, 
+           light_group = X$light_group,
+           ampm_group = X$ampm_group)
+  }
+}))
 
 
 
+p1 = dset02 %>% 
+  mutate(chk = map_lgl(data, is.null)) %>% 
+  filter(!chk) %>%  
+  unnest(data) %>% 
+  mutate(month = month(datetime)) %>% 
+  group_by(location, month) %>% 
+  filter(month == 1) %>% 
+  ggplot() +
+  geom_line(aes(x = H, y = rate, group = Date, color = light_group)) +
+  facet_grid(location~month)
+
+  dset02 %>% 
+  mutate(chk = map_lgl(data, is.null)) %>% 
+  filter(!chk) %>%  
+  unnest(data) %>% 
+  mutate(month = month(datetime)) %>% 
+  group_by(location, month) %>% 
+  filter(month == 10) %>% 
+  filter(str_detect(location, "Tai")) %>% 
+  ggplot() +
+  geom_path(aes(x = ppfd, y = rate, group = Date, 
+                 color = ampm_group)) +
+  facet_wrap("Date")
+
+p3 = 
+  dset02 %>% 
+  mutate(chk = map_lgl(data, is.null)) %>% 
+  filter(!chk) %>%  
+  unnest(data) %>% 
+  mutate(month = month(datetime)) %>% 
+  group_by(location, month) %>% 
+  filter(month == 1) %>% 
+  ggplot() +
+  geom_path(aes(x = ppfd, y = rate, group = Date, 
+                color = ampm_group)) +
+  facet_grid(location ~ ampm_group)
+
+gridExtra::grid.arrange(p1,p2,p3)
+
+try_pecurve = possibly(
+  function(X) {nls(rate ~ try_pecurve(ppfd, pmax, alpha, rd),
+      data = X,
+      start = list(pmax = 0.5, alpha = 0.001, rd = 0.1))},
+  NULL)
+
+dset02 = dset02 %>% mutate(model = map(data, try_pecurve))
+dset02
 
 
 
+dset02 %>% 
+  mutate(chk = map_lgl(data, is.null)) %>% 
+  filter(!chk) %>%  
+  unnest(data) %>% 
+  mutate(month = month(datetime)) %>% 
+  group_by(location, month) %>% 
+  ggplot() +
+  geom_path(aes(x = ppfd, y = rate, group = Date, 
+                color = ampm_group)) +
+  facet_grid(. ~ location)
 
 
 smodel1 = stan_model("pemodel_multilevel_saturating.stan")
+smodel2 = stan_model("pemodel_multilevel_inhibiting.stan")
 
 # 事前分布の場所（平均）
-priormuPMAXmu      = 300
-priormuALPHAmu     = log(3)
-priormuRESPmu      = 5
+priormuPMAXmu      = 1
+priormuALPHAmu     = log(0.01)
+priormuBETAmu     = log(0.01)
+priormuRESPmu      = 1
 
 # 事前分布の散らばり（標準偏差）
-priormuPMAXsigma   = abs(priormuPMAXmu) * 50
-priormuALPHAsigma  = 1.5
-priormuRESPsigma   = abs(priormuRESPmu) * 50
+priormuPMAXsigma   = abs(priormuPMAXmu) * 1
+priormuALPHAsigma  = 1.
+priormuBETAsigma  =  1.
+priormuRESPsigma   = abs(priormuRESPmu) * 1
 priorCauchy        = 2.5
 
-pnet = dset01 %>% pull(value)
-ppfd = dset01 %>% pull(ppfd)
-temperature = dset01 %>% pull(temperature)
-idx = dset01 %>% pull(idx)
-S = dset01 %>% group_by(idx) %>% summarise(S = length(value)) %>% pull(S)
+
+arikawa = 
+  dset02 %>% 
+  filter(str_detect(location, "Arikawa")) %>% 
+  mutate(chk = map_lgl(data, is.null)) %>% 
+  filter(!chk) %>%  
+  unnest(data) %>% 
+  mutate(ampm_group = factor(ampm_group)) %>% 
+  mutate(month = month(Date))
+
+arikawa = 
+  arikawa %>% 
+  group_by(Date, month) %>% 
+  nest() %>% 
+  group_by(month) %>% 
+  sample_n(5) %>% 
+  unnest() %>% 
+  ungroup() %>% 
+  filter(str_detect(ampm_group, "AM")) %>% 
+  mutate(idx = as.numeric(as.factor(month))) %>% 
+  arrange(idx)
+
+pnet = arikawa %>% pull(rate)
+ppfd = arikawa %>% pull(ppfd)
+idx = arikawa %>% pull(idx)
+idx %>% unique()
+temperature = arikawa %>% pull(temperature)
+S = arikawa %>% group_by(idx) %>% summarise(S = length(rate)) %>% pull(S)
+S
 
 max_ppfd = max(ppfd)
 K = length(unique(idx))
@@ -93,15 +212,22 @@ nchains = 4
 ncores = nchains
 niter = 2000
 
-nctrl = list(adapt_delta = 0.95,
-             max_treedepth = 12)
+nctrl = list(adapt_delta = 0.90,
+             max_treedepth = 10)
 
 stanout1 =  sampling(smodel1, chains = nchains, cores = ncores,
                      iter = niter,
                      control = nctrl,
                      refresh = 250)
 
+stanout2 =  sampling(smodel2, chains = nchains, cores = ncores,
+                     iter = niter,
+                     control = nctrl,
+                     refresh = 250)
+
 print(stanout1, pars = c("muPMAX", "muALPHA", "muRESP", "sigmaNP"))
+print(stanout2, pars = c("muPMAX", "muALPHA", "muBETA", "muRESP", "sigmaNP"))
+
 # save(stanout1, file = "stanout1.rda")
 
 
@@ -156,38 +282,33 @@ preddata = get_predicted_data(stanout1, dset01)
 
 fitdata = 
   fitdata %>% 
-  mutate(term = str_extract(term, "[1-2],[0-9]+")) %>% 
-  separate(term, into = c("idx", "n")) %>% 
-  mutate(idx = factor(as.numeric(idx), label = c("Tainoura (Isoyake)", 
-                                                 "Arikawa (Sargassum)")))
+  mutate(term = str_extract(term, "[0-9]+,[0-9]+")) %>% 
+  separate(term, into = c("idx", "n"))
 
 preddata = 
   preddata %>% 
-  mutate(term = str_extract(term, "[1-2],[0-9]+")) %>% 
-  separate(term, into = c("idx", "n")) %>% 
-  mutate(idx = factor(as.numeric(idx), label = c("Tainoura (Isoyake)", 
-                                                 "Arikawa (Sargassum)")))
+  mutate(term = str_extract(term, "[0-9]+,[0-9]+")) %>% 
+  separate(term, into = c("idx", "n")) 
 
 rawdata =
-  dset01 %>% 
-  select(ppfd, pnet = value, idx = idx) %>%
-  mutate(idx = factor(idx)) %>% 
-  mutate(idx = factor(as.numeric(idx), label = c("Tainoura (Isoyake)", 
-                                                 "Arikawa (Sargassum)")))
+  arikawa %>% 
+  select(ppfd, pnet = rate, idx = idx)  %>% 
+  mutate(idx = factor(idx))
 
 ## モデルに対する信用区間
 fitdata %>%
+  mutate(idx = factor(idx)) %>% 
   ggplot()+
-  geom_point(aes(x = ppfd, y = pnet, group = idx, color = idx), alpha = 0.5, data = rawdata) +
+  geom_point(aes(x = ppfd, y = pnet, group = idx, color = idx), 
+             alpha = 0.5, data = rawdata) +
   geom_line(aes(x = ppfd, y = estimate, color = idx)) +
-  geom_ribbon(aes(x = ppfd, ymin = conf.low, ymax = conf.high, fill = idx), alpha = 0.5) +
-  scale_color_brewer(palette = "Dark2") +
-  scale_fill_brewer(palette = "Dark2")  +
-  facet_wrap("idx", ncol = 1)
+  # geom_ribbon(aes(x = ppfd, ymin = conf.low, ymax = conf.high, fill = idx), alpha = 0.5) +
+  facet_wrap("idx")
 
 
   ## 予測値に対する信用区間
 preddata %>%
+  mutate(idx = factor(idx)) %>% 
   ggplot()+
   geom_point(aes(x = ppfd, y = pnet, group = idx, color = idx), alpha = 0.5, data = rawdata) +
   geom_smooth(aes(x = ppfd, y = pnet, group = idx, color = idx), alpha = 0.5, data = rawdata,
@@ -199,4 +320,8 @@ preddata %>%
   scale_fill_brewer(palette = "Dark2")  +
   facet_wrap("idx", ncol = 2)
 
+tibble(pmax = get_posterior_mean(stanout1, pars = "PMAX")[,"mean-all chains"],
+       m = 1:10) %>% 
+  ggplot() +
+  geom_line(aes(x = m, y = pmax))
 

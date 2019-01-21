@@ -18,7 +18,7 @@ functions {
 data {
   int<lower=1> N; // Number of observations
   int<lower=1> M; // Number of predictions
-  int K; // Number of dates
+  int K; // Number of groups
   int idx[N] ; // Index
   int S[K]; // Size of each data set.
   vector<lower=0>[N] ppfd;
@@ -29,7 +29,6 @@ data {
   real priormuRESPmu;
   real priormuPMAXsigma;
   real priormuALPHAsigma;
-  real priormuBETAsigma;
   real priormuRESPsigma;
   real<lower=0> priorCauchy;
   real max_ppfd;
@@ -82,7 +81,7 @@ model {
 
   // Posterior distribution
   for(k in 1:K) {
-    segment(pnet, pos, S[k]) ~ normal(segment(pnet_fit, pos, S[k]), sigmaNP[k]);
+    segment(pnet, pos, S[k]) ~ student_t(2, segment(pnet_fit, pos, S[k]), sigmaNP[k]);
     pos = pos + S[k];
   }
 }
@@ -96,12 +95,12 @@ generated quantities {
   }
   for(m in 1:M)  {
     for(k in 1:K) {
-      ypred[k, m] = normal_rng(yhat[k, m], sigmaNP[k]);
+      ypred[k, m] = student_t_rng(2, yhat[k, m], sigmaNP[k]);
     }
   }
   for(n in 1:N) {
-    log_lik[n] = normal_lpdf(pnet[n] | npmodel_real(PMAX[idx[n]],
-                          ALPHA[idx[n]],
+    log_lik[n] = student_t_lpdf(pnet[n] |2, npmodel_real(PMAX[idx[n]],
+                          ALPHA[idx[n]], 
                           RESP[idx[n]], ppfd[n]), sigmaNP[idx[n]]) ;
   }
 }
