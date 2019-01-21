@@ -206,27 +206,39 @@ write_csv(dset01, "./Modified_data/data_for_nls_model.csv")
 
 # 水温------------------------------------------------
 xlabel = ""
-ylabel = expression(Temperature~~(C*degree))
-gtitle = "Temperature"
+ylabel = expression(Temperature~(degree*C))
+gtitle = "Daily mean temperature"
 alldata %>%
+  group_by(location, Date) %>% 
+  summarise(temperature = mean(temperature)) %>% 
   mutate(month = month(Date)) %>% 
   group_by(location, month) %>% 
-  summarise(temperature = mean(temperature)) %>% 
+  summarise(temp_mean = mean(temperature),
+            temp_sd = sd(temperature),
+            n = length(temperature)) %>% 
+  mutate(l95 = temp_mean - temp_sd/ sqrt(n -1),
+         u95 = temp_mean + temp_sd/ sqrt(n -1)) %>% 
   ggplot() +
-  geom_line(aes(x = month, y = temperature, color =location))+
+  geom_point(aes(x = month, y = temp_mean, color =location), position = position_dodge(0.1))+
+  geom_line(aes(x = month, y = temp_mean, color =location) , position = position_dodge(0.1))+
+  geom_errorbar(aes(x = month, 
+                    ymin = l95, 
+                    ymax = u95,
+                    color =location), 
+                width = 0,
+                position = position_dodge(0.1))+
   scale_x_continuous(xlabel,
                      labels = month_labels(),
-                     breaks = 1:12,
-                     limits = c(1,12)) +
+                     breaks = 1:12) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 30),
-                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
-  scale_fill_brewer(name = "", palette = "Dark2") +
+                     limits = c(10, 30)) +
+  scale_color_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank(),
+        axis.line = element_line())
 
 ggsave(filename = "水温.png", 
        width = WIDTH,
