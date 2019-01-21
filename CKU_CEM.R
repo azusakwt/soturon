@@ -124,6 +124,32 @@ ggsave(filename = "流速.png",
        height = HEIGHT,
        units = "mm")
 
+#ボックスプロット
+cem %>% 
+  group_by(location,month) %>% 
+  drop_na() %>% 
+  summarise(speed = mean(mean_speed)) %>% 
+  ggplot()+
+  geom_boxplot(aes(x = location,
+                   y = speed,
+                   fill = location,
+                   group = interaction(location)))+
+  xlab(xlabel) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 10),
+                     breaks = c(0, 2, 4, 6, 8, 10)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())
+
+ggsave(filename = "流速ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
+
 # write_csv(cem, "../soturon_2019/Modified_data/CEM_fixed.csv")
 #年間の平均
 cem %>% group_by(location) %>% drop_na() %>% 
@@ -204,10 +230,36 @@ cku %>%
         legend.background = element_blank())
 
 ggsave(filename = "クロロフィル蛍光.png", 
-       plot = p2,
        width = WIDTH,
        height = HEIGHT,
        units = "mm")
+
+cku %>% 
+  group_by(location,month) %>% 
+  drop_na() %>% 
+  summarise(chla = mean(mean_chla)) %>% 
+  ggplot()+
+  geom_boxplot(aes(x = location,
+                   y = chla,
+                   fill = location,
+                   group = interaction(location)))+
+  xlab(xlabel) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 50),
+                     breaks = c(0, 10, 20,30, 40, 50)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())
+
+ggsave(filename = "クロロフィル蛍光ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
+
+
 
 #年間の平均
 cku %>% group_by(location) %>%drop_na() %>%  

@@ -395,6 +395,49 @@ ggsave(filename = "光環境.png",
        height = HEIGHT,
        units = "mm")  
 
+dset_daily %>% 
+  mutate(month = month(Date)) %>% 
+  group_by(month, location) %>% 
+  summarise(daily_ppfd = mean(daily_ppfd)) %>% 
+  ggplot()+
+  geom_boxplot(aes(x = location,
+                   y = daily_ppfd,
+                   fill = location,
+                   group = interaction(location)))+
+  xlab(xlabel) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 20),
+                     breaks = c(0, 5, 10, 15, 20)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())
+
+ggsave(filename = "光環境ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")  
+
+dset_daily %>% 
+  geom_boxplot(aes(x = month,
+                   y = daily_ppfd,
+                   fill = location)) +
+  # geom_line(aes(x = month,
+  #               y = daily_ppfd, 
+  #               color = location)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(ylabel) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(color = FALSE, fill = FALSE) +
+  facet_wrap("location", nrow = 1)
+
+
 #年間を通しての平均
 dset_daily %>%
   group_by(location) %>% 
