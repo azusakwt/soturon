@@ -214,7 +214,10 @@ alldata %>%
   summarise(temperature = mean(temperature)) %>% 
   ggplot() +
   geom_line(aes(x = month, y = temperature, color =location))+
-  xlab(xlabel) +
+  scale_x_continuous(xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(1,12)) +
   scale_y_continuous(name = ylabel,
                      limits = c(0, 30),
                      breaks = c(0, 5, 10, 15, 20, 25, 30)) +
@@ -230,6 +233,31 @@ ggsave(filename = "水温.png",
        height = HEIGHT,
        units = "mm")
 
+alldata %>%
+  mutate(month = month(Date)) %>% 
+  ggplot() +
+   geom_boxplot(aes(x = month,
+                   y = temperature,
+                   fill = location,
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12.5)) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 30),
+                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank()) + 
+  facet_wrap("location", nrow = 1)
 
+ggsave(filename = "水温ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
 
 

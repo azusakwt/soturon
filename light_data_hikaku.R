@@ -397,14 +397,15 @@ ggsave(filename = "光環境.png",
 
 dset_daily %>% 
   mutate(month = month(Date)) %>% 
-  group_by(month, location) %>% 
-  summarise(daily_ppfd = mean(daily_ppfd)) %>% 
   ggplot()+
-  geom_boxplot(aes(x = location,
+  geom_boxplot(aes(x = month,
                    y = daily_ppfd,
                    fill = location,
-                   group = interaction(location)))+
-  xlab(xlabel) +
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12)) +
   scale_y_continuous(name = ylabel,
                      limits = c(0, 20),
                      breaks = c(0, 5, 10, 15, 20)) +
@@ -413,7 +414,9 @@ dset_daily %>%
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank())+
+  facet_wrap("location", nrow = 1)
+
 
 ggsave(filename = "光環境ボックス.png", 
        width = WIDTH,
@@ -435,6 +438,7 @@ dset_daily %>%
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
+  theme(axis.text.x = element_text(size = rel(0.8))) +
   facet_wrap("location", nrow = 1)
 
 

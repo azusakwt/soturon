@@ -77,21 +77,39 @@ ggplot(cem)+
 #おかしなデータを確認
 cem %>%
   group_by(location, Date) %>% 
-  filter(str_detect(location, "tainoura")) %>%
-  filter(!(Date == as.Date("2017-10-31"))) %>%
+  filter(str_detect(location, "arikawagaramo")) %>%
+  # filter(!(Date == as.Date("2017-10-31"))) %>%
   unnest() %>%
   mutate(month_floor = floor_date(Date, "month")) %>%
-  filter(month_floor == as.Date("2017-10-01")) %>%
+  filter(month_floor == as.Date("2018-03-01")) %>%
   ggplot() +
   geom_line(aes(x = Date, y = mean_speed, group = Date))
 
 #おかしなデータ削除
 cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
 cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
 
 #月ごとにグループ化できるようにする
 cem = cem %>% 
   mutate(month = month(Date))
+
+cem = 
+  cem %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawagaramo" = 2)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2),
+                           label = c("Tainoura (Isoyake)",
+                                     "Arikawa (Sargassum)")))
+
 
 #作図
 xlabel = ""
@@ -126,15 +144,19 @@ ggsave(filename = "流速.png",
 
 #ボックスプロット
 cem %>% 
-  group_by(location,month) %>% 
+  group_by(location,Date) %>% 
   drop_na() %>% 
   summarise(speed = mean(mean_speed)) %>% 
+  mutate(month = month(Date)) %>% 
   ggplot()+
-  geom_boxplot(aes(x = location,
+  geom_boxplot(aes(x = month,
                    y = speed,
                    fill = location,
-                   group = interaction(location)))+
-  xlab(xlabel) +
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12.5)) +
   scale_y_continuous(name = ylabel,
                      limits = c(0, 10),
                      breaks = c(0, 2, 4, 6, 8, 10)) +
@@ -143,7 +165,9 @@ cem %>%
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank())+
+  facet_wrap("location", nrow = 1)
+
 
 ggsave(filename = "流速ボックス.png", 
        width = WIDTH,
@@ -186,22 +210,35 @@ cku = cku %>%
 ggplot(cku)+
   geom_line(aes(x = Date, y = mean_chla, color = location))
 
-# cem %>%
-#   group_by(location, Date) %>% 
-#   filter(str_detect(location, "tainoura")) %>%
-#   filter(!(Date == as.Date("2017-10-31"))) %>%
-#   unnest() %>%
-#   mutate(month_floor = floor_date(Date, "month")) %>%
-#   filter(month_floor == as.Date("2017-10-01")) %>%
-#   ggplot() +
-#   geom_line(aes(x = Date, y = mean_speed, group = Date))
-# 
-# cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
-# cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+cku %>%
+  group_by(location, Date) %>%
+  filter(str_detect(location, "arikawaamamo")) %>%
+  # filter(!(Date == as.Date("2018-03-31"))) %>%
+  unnest() %>%
+  mutate(month_floor = floor_date(Date, "month")) %>%
+  filter(month_floor == as.Date("2018-03-01")) %>%
+  ggplot() +
+  geom_line(aes(x = Date, y = mean_chla, group = Date))
+
+cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+cku = cku %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawaamamo")))
 
 #月ごとにグループ化できるようにする
 cku = cku %>% 
   mutate(month = month(Date))
+
+cku = 
+  cku %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2),
+                           label = c("Tainoura (Isoyake)",
+                                     "Arikawa (Sargassum)")))
+
 
 #作図
 xlabel = ""
@@ -235,14 +272,16 @@ ggsave(filename = "クロロフィル蛍光.png",
        units = "mm")
 
 cku %>% 
-  group_by(location,month) %>% 
-  drop_na() %>% 
-  summarise(chla = mean(mean_chla)) %>% 
+  mutate(month = month(Date)) %>% 
   ggplot()+
-  geom_boxplot(aes(x = location,
-                   y = chla,
+  geom_boxplot(aes(x = month,
+                   y = mean_chla,
                    fill = location,
-                   group = interaction(location)))+
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12)) +
   xlab(xlabel) +
   scale_y_continuous(name = ylabel,
                      limits = c(0, 50),
@@ -252,7 +291,10 @@ cku %>%
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank())+
+  facet_wrap("location", nrow = 1)
+
+
 
 ggsave(filename = "クロロフィル蛍光ボックス.png", 
        width = WIDTH,
@@ -302,7 +344,32 @@ cku %>% group_by(location) %>% drop_na() %>%
 
 # write_csv(cku,"../soturon_2019/Modified_data/CKU_fixed.csv")
 
+cku %>% 
+  mutate(month = month(Date)) %>% 
+  ggplot()+
+  geom_boxplot(aes(x = month,
+                   y = mean_tur,
+                   fill = location,
+                   group = interaction(location, month))) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(0,12)) +
+  xlab(xlabel) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 900),
+                     breaks = c(0, 100, 200,300, 400, 500, 600, 700, 800, 900)) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank())+
+  facet_wrap("location", nrow = 1)
 
-
+ggsave(filename = "濁度ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       units = "mm")
 
 
