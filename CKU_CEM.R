@@ -117,14 +117,14 @@ cem %>%
   geom_line(aes(x = Date, y = mean_speed, group = Date))
 
 #おかしなデータ削除
-cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
-cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
-cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
+# cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
+# cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
 
 #月ごとにグループ化できるようにする
 cem = cem %>% 
@@ -144,8 +144,8 @@ cem =
 
 #作図
 xlabel = ""
-ylabel = expression("Velocity"~cm~sec^{-1})
-gtitle = "Velocity of water"
+ylabel = expression("Velocity"~(cm~sec^{-1}))
+gtitle = ""
 
 cem %>% 
   group_by(location,month) %>% 
@@ -184,19 +184,17 @@ cem %>%
                    y = speed,
                    fill = location,
                    group = interaction(location, month))) +
-  scale_x_continuous(name = xlabel,
-                     labels = month.abb[1:12],
-                     breaks = 1:12,
-                     limits = c(0,12.5)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
   scale_y_continuous(name = ylabel,
                      limits = c(0, 10),
                      breaks = c(0, 2, 4, 6, 8, 10)) +
-  scale_fill_brewer(name = "", palette = "Dark2") +
+  scale_color_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
-  theme(legend.position = c(1,1),
-        legend.justification = c(1,1),
-        legend.title = element_blank(),
-        legend.background = element_blank())+
+  guides(color = FALSE, fill = FALSE) +
+  theme(axis.line = element_line())+
   facet_wrap("location", nrow = 1)
 
 
@@ -306,7 +304,8 @@ cku =
 
 xlabel = ""
 ylabel = expression("Chl-a"~(mu*g~L^{-1}))
-gtitle = "Chlorophyll fluorescence (mean and 1 standard deviation)"
+gtitle = ""
+# gtitle = "Chlorophyll fluorescence (mean and 1 standard deviation)"
 
 # ログスケールでの平均値と標準偏差
 
@@ -342,7 +341,8 @@ cku %>%
   theme(legend.position = c(0,1),
         legend.justification = c(0,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank(),
+        axis.line = element_line())
 
 ggsave(filename = "クロロフィル蛍光.png", 
        width = WIDTH,
@@ -369,7 +369,8 @@ cku %>%
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())+
+        legend.background = element_blank(),
+        axis.line = element_line())+
   facet_wrap("location", nrow = 1)
 
 

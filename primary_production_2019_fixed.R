@@ -280,7 +280,7 @@ summary(gam02)
 #NEP-----------------------------------------------
 xlabel = ""
 ylabel = expression("NEP"~(g~O[2]~m^{-2}~day^{-1}))
-gtitle = "Net Ecosystem Production"
+gtitle = ""
 
 dset03 = 
   df1  %>% 
@@ -309,10 +309,11 @@ dset03 %>%
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(0.8))) +
+  theme(axis.text.x = element_text(size = rel(0.8)),
+        axis.line = element_line()) +
   facet_wrap("location", nrow = 1)
 
-ggsave(filename = "GAM入り年間純一次生産量(0m+1m).png", 
+ggsave(filename = "GAM入り年間純一次生産量.png", 
        width = WIDTH,
        height = HEIGHT,
        units = "mm")

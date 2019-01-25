@@ -77,7 +77,7 @@ dset_daily = light %>%
 # 標準誤差は sd() / sqrt(length()-1)
 xlabel = ""
 ylabel = expression("Daily underwater PPFD"~(mol~m^{-2}~day^{-1}))
-gtitle = "Daily PPFD"
+gtitle = ""
 
 dset_daily %>%
   mutate(month = month(Date)) %>% 
@@ -110,7 +110,9 @@ ggplot()+
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank())
+        legend.background = element_blank(),
+        axis.line = element_line())
+
 
 ggsave(filename = "光環境.png", 
        width = WIDTH,
@@ -121,22 +123,20 @@ dset_daily %>%
   mutate(month = month(Date)) %>% 
   ggplot()+
   geom_boxplot(aes(x = month,
-                   y = daily_ppfd,
+                   y = ppfd,
                    fill = location,
                    group = interaction(location, month))) +
-  scale_x_continuous(name = xlabel,
-                     labels = month_labels(),
-                     breaks = 1:12,
-                     limits = c(0,12)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 20),
-                     breaks = c(0, 5, 10, 15, 20)) +
+                     limits = c(0, 30),
+                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
   scale_fill_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
-  theme(legend.position = c(1,1),
-        legend.justification = c(1,1),
-        legend.title = element_blank(),
-        legend.background = element_blank())+
+  guides(color = FALSE, fill = FALSE) +
+  theme(axis.line = element_line())+
   facet_wrap("location", nrow = 1)
 
 

@@ -207,7 +207,7 @@ write_csv(dset01, "./Modified_data/data_for_nls_model.csv")
 # 水温------------------------------------------------
 xlabel = ""
 ylabel = expression(Temperature~(degree*C))
-gtitle = "Daily mean temperature"
+gtitle = ""
 alldata %>%
   group_by(location, Date) %>% 
   summarise(temperature = mean(temperature)) %>% 
@@ -227,8 +227,8 @@ alldata %>%
                     color =location), 
                 width = 0,
                 position = position_dodge(0.1))+
-  scale_x_continuous(xlabel,
-                     labels = month_labels(),
+  scale_x_continuous(name = xlabel,
+                     labels = month.abb[1:12],
                      breaks = 1:12) +
   scale_y_continuous(name = ylabel,
                      limits = c(10, 30)) +
@@ -252,19 +252,21 @@ alldata %>%
                    y = temperature,
                    fill = location,
                    group = interaction(location, month))) +
-  scale_x_continuous(name = xlabel,
-                     labels = month_labels(),
-                     breaks = 1:12,
-                     limits = c(0,12.5)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 30),
-                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+                     limits = c(10, 30),
+                     breaks = c(10, 15, 20, 25, 30)) +
   scale_fill_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
+  guides(color = FALSE, fill = FALSE) +
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),
         legend.title = element_blank(),
-        legend.background = element_blank()) + 
+        legend.background = element_blank(),
+        axis.line = element_line())+
   facet_wrap("location", nrow = 1)
 
 ggsave(filename = "水温ボックス.png", 
