@@ -389,7 +389,7 @@ cku %>% group_by(location) %>%drop_na() %>%
 #濁度
 xlabel = ""
 ylabel = expression("Turbidity"~(mg~L^{-1}))
-gtitle = "Turbidity"
+gtitle = ""
 
 cku %>% 
   group_by(location, Date, month) %>% 

@@ -126,6 +126,13 @@ dset_daily %>%
                    y = ppfd,
                    fill = location,
                    group = interaction(location, month))) +
+  geom_smooth(aes(x= month, y = ppfd, group = location),
+              method = "gam",
+              fill = "black",
+              color = "black",
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x)) +
   scale_x_continuous(xlabel, 
                      minor_breaks = 1:12,
                      breaks = c(1, 5, 8, 12),
@@ -145,23 +152,26 @@ ggsave(filename = "光環境ボックス.png",
        height = HEIGHT,
        units = "mm")  
 
-dset_daily %>% 
-  geom_boxplot(aes(x = month,
-                   y = daily_ppfd,
-                   fill = location)) +
-  # geom_line(aes(x = month,
-  #               y = daily_ppfd, 
-  #               color = location)) +
-  scale_x_continuous(xlabel, 
-                     minor_breaks = 1:12,
-                     breaks = c(1, 5, 8, 12),
-                     labels = month.abb[c(1, 5, 8, 12)]) +
-  scale_y_continuous(ylabel) +
-  scale_color_brewer(palette = "Dark2") +
-  scale_fill_brewer(palette = "Dark2") +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(0.8))) +
-  facet_wrap("location", nrow = 1)
+
+library(mgcv)
+
+dset03 = 
+  dset_daily %>% 
+  mutate(month = month(Date))
+
+gam00 = gam(ppfd ~ s(month),
+            data = dset03)   # 帰無仮説：location の影響はない
+gam01 = gam(ppfd ~ s(month) + location, 
+            data = dset03) # 対立仮設：location の影響はある
+gam02 = gam(ppfd ~ s(month, by = location) + location, 
+            data = dset03) # 対立仮設：location の影響はある
+# F検定をつかって，二つのモデルの比較
+
+anova(gam00, gam01, gam02, test = "F")
+summary(gam02)
+
+
+
 
 
 #年間を通しての平均

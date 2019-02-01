@@ -252,6 +252,13 @@ alldata %>%
                    y = temperature,
                    fill = location,
                    group = interaction(location, month))) +
+  geom_smooth(aes(x= month, y = temperature, group = location),
+              method = "gam",
+              fill = "black",
+              color = "black",
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x)) +
   scale_x_continuous(xlabel, 
                      minor_breaks = 1:12,
                      breaks = c(1, 5, 8, 12),
@@ -273,5 +280,23 @@ ggsave(filename = "水温ボックス.png",
        width = WIDTH,
        height = HEIGHT,
        units = "mm")
+
+library(mgcv)
+
+dset03 = 
+  alldata %>% 
+  mutate(month = month(Date))
+
+gam00 = gam(temperature ~ s(month),
+            data = dset03)   # 帰無仮説：location の影響はない
+gam01 = gam(temperature ~ s(month) + location, 
+            data = dset03) # 対立仮設：location の影響はある
+gam02 = gam(temperature ~ s(month, by = location) + location, 
+            data = dset03) # 対立仮設：location の影響はある
+# F検定をつかって，二つのモデルの比較
+
+anova(gam00, gam01, gam02, test = "F")
+summary(gam02)
+
 
 
