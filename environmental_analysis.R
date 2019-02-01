@@ -250,8 +250,11 @@ alldata %>%
   ggplot() +
    geom_boxplot(aes(x = month,
                    y = temperature,
+                   color = location,
                    fill = location,
-                   group = interaction(location, month))) +
+                   group =  month),
+                alpha = 0.5,
+                size = rel(0.4)) +
   geom_smooth(aes(x= month, y = temperature, group = location),
               method = "gam",
               fill = "black",
@@ -266,14 +269,11 @@ alldata %>%
   scale_y_continuous(name = ylabel,
                      limits = c(10, 30),
                      breaks = c(10, 15, 20, 25, 30)) +
-  scale_fill_brewer(name = "", palette = "Dark2") +
-  ggtitle(gtitle) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
-  theme(legend.position = c(1,1),
-        legend.justification = c(1,1),
-        legend.title = element_blank(),
-        legend.background = element_blank(),
-        axis.line = element_line())+
+  theme(axis.text.x = element_text(size = rel(0.8)),
+        axis.line = element_line()) +
   facet_wrap("location", nrow = 1)
 
 ggsave(filename = "水温ボックス.png", 

@@ -124,8 +124,11 @@ dset_daily %>%
   ggplot()+
   geom_boxplot(aes(x = month,
                    y = ppfd,
+                   color = location,
                    fill = location,
-                   group = interaction(location, month))) +
+                   group =  month),
+               alpha = 0.5,
+               size = rel(0.4)) +
   geom_smooth(aes(x= month, y = ppfd, group = location),
               method = "gam",
               fill = "black",
@@ -140,11 +143,13 @@ dset_daily %>%
   scale_y_continuous(name = ylabel,
                      limits = c(0, 30),
                      breaks = c(0, 5, 10, 15, 20, 25, 30)) +
-  scale_fill_brewer(name = "", palette = "Dark2") +
-  ggtitle(gtitle) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
-  theme(axis.line = element_line())+
+  theme(axis.text.x = element_text(size = rel(0.8)),
+        axis.line = element_line()) +
   facet_wrap("location", nrow = 1)
+
 
 
 ggsave(filename = "光環境ボックス.png", 
