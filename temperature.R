@@ -32,6 +32,10 @@ month_labels = function() {
 # A5寸法
 WIDTH = 297/2
 HEIGHT = 210/2
+# 図のテーマ
+# source() は別のRファイルを読み込んで実行する
+source("theme_kawate.R")
+
 
 #言語の変換
 Sys.getlocale("LC_TIME")#確認
@@ -137,8 +141,10 @@ temperature %>%
                    group =  month),
                alpha = 0.5,
                size = rel(0.4)) +
-  geom_smooth(aes(x= month, y = temperature, group = location),
+  geom_smooth(aes(x= month, y = temperature,
+                  linetype = "GAM"),
               method = "gam",
+              method.args = list(family = Gamma(link = "log")),
               fill = "black",
               color = "black",
               size = rel(0.4),
@@ -153,12 +159,8 @@ temperature %>%
                      breaks = c(10, 15, 20, 25, 30)) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5)),
-        axis.line = element_line()) +
-  facet_wrap("location", nrow = 1)+
-  theme_classic(base_size=11, base_family='')
+  theme_kawate(16) +
+  facet_wrap("location", nrow = 1)
 
 temperature %>% 
   group_by(location, month) %>% 

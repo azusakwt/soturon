@@ -98,7 +98,7 @@ df1 %>%
 #GEP-----------------------------------------------------------------
 #作図
 xlabel = ""
-ylabel = expression("GEP"~(g~O[2]~m^{-2}~day^{-1}))
+ylabel = expression("GEP"~(g~O[2]~m^{-3}~day^{-1}))
 gtitle = "Gross Ecosystem Production"
 
 dset01 = 
@@ -223,7 +223,7 @@ ggsave(filename = "GAM入り年間総一次生産量(0m+1m).png",
 
 #RPの解析-----------------------------------
 xlabel = ""
-ylabel = expression("RP"~(g~O[2]~m^{-2}~day^{-1}))
+ylabel = expression("ER"~(g~O[2]~m^{-3}~day^{-1}))
 gtitle = "Respiration Production"
 
 dset02 = 
@@ -235,13 +235,12 @@ dset02 =
 dset02 %>% 
   ggplot(aes(x = month,
              y = value, 
-             color = location)) +
-  geom_smooth(method = "gam", 
+             color = location,
+             fill = location)) +
+    geom_smooth(method = "gam", 
               size = rel(0.4),
               alpha = 0.25,
-              formula = y ~ s(x, bs = "cc"),
-              method.args = 
-                list(family = Gamma(link = "log")))  + 
+              formula = y ~ s(x, bs = "cc"))  + 
   scale_x_continuous(xlabel, 
                      minor_breaks = 1:12,
                      breaks = c(1, 5, 8, 12),
@@ -249,13 +248,8 @@ dset02 %>%
   scale_y_continuous(ylabel) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
-  theme_classic(base_size=11, base_family='')+
-  theme(legend.position = c(1,1),
-        legend.justification = c(1,1),
-        legend.title = element_blank(),
-        legend.background = element_blank(),
-        axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5))) 
+  # facet_rep_wrap("location", nrow = 1)+
+  theme_kawate(base_size = 16) 
 
 ggsave(filename = "呼吸量.png",
        width = WIDTH,
@@ -285,7 +279,7 @@ summary(gam02)
 
 #NEP-----------------------------------------------
 xlabel = ""
-ylabel = expression("NEP"~(g~O[2]~m^{-2}~day^{-1}))
+ylabel = expression("NEP"~(g~O[2]~m^{-3}~day^{-1}))
 gtitle = ""
 
 dset03 = 
