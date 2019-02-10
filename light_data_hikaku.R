@@ -51,7 +51,7 @@ temperature = temperature %>%
   summarise(temperature = mean(temperature, na.rm=T)) %>% 
   mutate(month = month(Date)) 
 
-light = 
+ light = 
   light %>% 
   ungroup() %>% 
   mutate(location = recode(location,
@@ -62,15 +62,15 @@ light =
                            "mushima3" = 5)) %>% 
   mutate(location = factor(location, 
                            levels = c(1,2,3,4,5),
-                           label = c("Tainoura (Isoyake)",
+                           label = c("Tainoura",
                                      "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)",
+                                     "Arikawa",
                                      "Mushima (Old port)" ,
                                      "Mushima (New port)" ))) 
 
 
-dset_daily = light %>% 
-  filter(str_detect(location, "Tainoura|Sargassum"))
+dset_daily =light %>%  
+  filter(!str_detect(location, "Zostera|Mushima")) 
 
 #使う
 # 標準偏差は sd()
@@ -141,12 +141,13 @@ dset_daily %>%
                      breaks = c(1, 5, 8, 12),
                      labels = month.abb[c(1, 5, 8, 12)]) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 30),
+                     limits = c(-1, 30),
                      breaks = c(0, 5, 10, 15, 20, 25, 30)) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(0.8)),
+  theme(axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5)),
         axis.line = element_line()) +
   facet_wrap("location", nrow = 1)
 

@@ -52,59 +52,73 @@ light = light %>%
   mutate(month = month(Date)) 
 
 temperature = temperature %>% 
+  ungroup() %>%
+  mutate(location = recode(location,
+                           "tainoura" = 1,
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3,
+                           "mushima2" = 4,
+                           "mushima3" = 5))  %>%
+  mutate(location = factor(location,
+                           levels = c(1,2,3,4,5),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa",
+                                     "Mushima (Old port)" ,
+                                     "Mushima (New port)" ))) %>% 
   group_by(location, Date) %>% 
   summarise(temperature = mean(temperature, na.rm=T)) %>% 
   mutate(month = month(Date)) 
 
-light = 
-  light %>% 
-  ungroup() %>% 
+light =
+  light %>%
+  ungroup() %>%
   mutate(location = recode(location,
-                           "tainoura" = 1, 
+                           "tainoura" = 1,
                            "arikawaamamo" = 2,
                            "arikawagaramo" = 3,
                            "mushima2" = 4,
-                           "mushima3" = 5)) %>% 
-  mutate(location = factor(location, 
+                           "mushima3" = 5))  %>%
+  mutate(location = factor(location,
                            levels = c(1,2,3,4,5),
-                           label = c("Tainoura (Isoyake)",
+                           label = c("Tainoura",
                                      "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)",
+                                     "Arikawa",
                                      "Mushima (Old port)" ,
-                                     "Mushima (New port)" ))) 
-temperature = 
-  temperature %>% 
-  ungroup() %>% 
-  mutate(location = recode(location,
-                           "tainoura" = 1, 
-                           "arikawaamamo" = 2,
-                           "arikawagaramo" = 3,
-                           "mushima2" = 4,
-                           "mushima3" = 5)) %>% 
-  mutate(location = factor(location, 
-                           levels = c(1,2,3,4,5),
-                           label = c("Tainoura (Isoyake)",
-                                     "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)",
-                                     "Mushima (Old port)" ,
-                                     "Mushima (New port)" ))) 
+                                     "Mushima (New port)" )))
+# temperature = 
+#   temperature %>% 
+#   ungroup() %>% 
+#   mutate(location = recode(location,
+#                            "tainoura" = 1, 
+#                            "arikawaamamo" = 2,
+#                            "arikawagaramo" = 3,
+#                            "mushima2" = 4,
+#                            "mushima3" = 5)) %>% 
+#   mutate(location = factor(location, 
+#                            levels = c(1,2,3,4,5),
+#                            label = c("Tainoura",
+#                                      "Arikawa (Zostera)",
+#                                      "Arikawa",
+#                                      "Mushima (Old port)" ,
+#                                      "Mushima (New port)" ))) 
 
 
 df1 = kamigoto
-df1 = 
-  df1 %>% 
-  ungroup() %>% 
+df1 =
+  df1 %>%
+  ungroup() %>%
   mutate(location = recode(location,
-                           "Tainoura (Isoyake)" = 1, 
+                           "Tainoura (Isoyake)" = 1,
                            "Arikawa (Zostera)" = 2,
                            "Arikawa (Sargassum)" = 3,
                            "Mushima (Old port)" = 4,
-                           "Mushima (New port)" = 5)) %>% 
-  mutate(location = factor(location, 
+                           "Mushima (New port)" = 5)) %>%
+  mutate(location = factor(location,
                            levels = c(1,2,3,4,5),
-                           label = c("Tainoura (Isoyake)",
+                           label = c("Tainoura",
                                      "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)",
+                                     "Arikawa",
                                      "Mushima (Old port)" ,
                                      "Mushima (New port)" )))
 
@@ -113,7 +127,7 @@ df1 =
 alldata = 
   full_join(df1, light, by = c("location","month", "Date")) %>% 
   full_join(temperature, by = c("location", "month", "Date")) %>% 
-  filter(!str_detect(location, "Zostera")) %>% 
+  filter(!str_detect(location, "Zostera")) %>%
   filter(!str_detect(location, "Mushima"))
 
 alldata = 
@@ -245,7 +259,7 @@ ggsave(filename = "水温.png",
        height = HEIGHT,
        units = "mm")
 
-alldata %>%
+temperature %>%
   mutate(month = month(Date)) %>% 
   ggplot() +
    geom_boxplot(aes(x = month,

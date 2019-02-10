@@ -40,17 +40,11 @@ Sys.setlocale("LC_TIME","en_US.UTF-8")#設定
 
 #データの読み込み-----------------------------------
 #上五島
-fnames = dir("../",pattern = "kamigoto",full=T)
-fnames = grep(x = fnames,pattern = "(\\.){2}//kamigoto_[0-9]{6}",value = T)
-fnames = paste(fnames,"/Modified_data/", sep = "")
-oxygen_file = data_frame(file = as.character(dir(fnames, pattern = "oxygen", full.names = T)))
-temperature_a = oxygen_file %>% 
-  mutate(temperature_a = map(file,
-                      read_csv))
-temperature_a %>% slice(1) %>% unnest()
+oxygen = read_csv("~/Lab_Data/kawatea/Modified_Data/kamigoto_oxygen_all.csv")
+
 
 temperature_a = 
-  temperature_a %>% 
+  oxygen %>% 
   unnest() %>% 
   select(Date, location, position, datetime, temperature) %>% 
   filter(str_detect(position,"0m"))
@@ -98,7 +92,7 @@ temperature_a %>%
   geom_line(aes(x = Date, y = mean_day_temperature,color = location))
 
 #月ごと
-temperature_a = temperature_a %>% 
+temperature = temperature_a %>% 
   mutate(month = month(Date)) 
 
 temperature_a %>% 
@@ -107,6 +101,74 @@ temperature_a %>%
   ggplot()+
   geom_line(aes(x = month, y = mean_temperature, color = location))
 
+temperature = temperature %>% 
+  ungroup() %>%
+  mutate(location = recode(location,
+                           "tainoura" = 1,
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3,
+                           "mushima2" = 4,
+                           "mushima3" = 5))  %>%
+  mutate(location = factor(location,
+                           levels = c(1,2,3,4,5),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa",
+                                     "Mushima (Old port)" ,
+                                     "Mushima (New port)" ))) %>% 
+  group_by(location, Date) %>% 
+  summarise(temperature = mean(temperature, na.rm=T)) %>% 
+  mutate(month = month(Date)) 
+
+temperature = temperature %>% 
+  filter(!str_detect(location, "Zostera"))
+
+xlabel = ""
+ylabel = expression(Temperature~(degree*C))
+gtitle = ""
+
+temperature %>%
+  mutate(month = month(Date)) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = month,
+                   y = temperature,
+                   color = location,
+                   fill = location,
+                   group =  month),
+               alpha = 0.5,
+               size = rel(0.4)) +
+  geom_smooth(aes(x= month, y = temperature, group = location),
+              method = "gam",
+              fill = "black",
+              color = "black",
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(10, 30),
+                     breaks = c(10, 15, 20, 25, 30)) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(color = FALSE, fill = FALSE) +
+  theme(axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5)),
+        axis.line = element_line()) +
+  facet_wrap("location", nrow = 1)+
+  theme_classic(base_size=11, base_family='')
+
+
+WIDTH = 297/2
+HEIGHT = 210/2
+
+ggsave(filename = "水温ボックス.png", 
+       width = WIDTH,
+       height = HEIGHT,
+       dpi = 600,
+       units = "mm")
 
 #六島------------------------------------------------------------------------
 fnames = dir("../",pattern = "mushima",full=T)
