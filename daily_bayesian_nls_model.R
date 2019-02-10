@@ -71,6 +71,25 @@ dset02 = inner_join(dset01,
                       select(location, datetime, sppfd, Date),
                     by = c("location", "datetime", "Date"))
 
+
+dset02 %>% 
+  filter(between(ppfd, 0, 2500)) %>% 
+  group_by(location, Date, month) %>% 
+  summarise(ppfd = sum(sppfd)/10000) %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = month, y = ppfd, 
+                   group = month)) +
+  scale_x_continuous(minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  facet_wrap("location", nrow = 1)
+
+dset02 %>% 
+  ggplot() +
+  geom_line(aes(x=H, y = sppfd, group = Date)) +
+  facet_wrap("location", nrow = 1)
+
+
 dset02 = dset02 %>% mutate(ampm_group = ifelse(H < 12, "AM", "PM"))
 
 dset02 = 

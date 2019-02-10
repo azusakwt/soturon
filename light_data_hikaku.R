@@ -43,7 +43,11 @@ Sys.setlocale("LC_TIME","en_US.UTF-8")#設定
 
 light = read_csv("Modified_data/light_calibrate.csv")
 temperature = read_csv("Modified_data/temperature.csv")
-
+light %>% filter(Date == "2018-09-05",
+                 str_detect(location, "amamo"),
+                 str_detect(position, "0m")) %>% 
+  filter(ppfd > 0) %>% 
+  print(n = Inf)
 light = light %>% 
   group_by(location, Date) %>% 
   mutate(ppfd = ifelse(ppfd < 0, 0, ppfd)) %>% 

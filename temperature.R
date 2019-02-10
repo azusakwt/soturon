@@ -160,6 +160,11 @@ temperature %>%
   facet_wrap("location", nrow = 1)+
   theme_classic(base_size=11, base_family='')
 
+temperature %>% 
+  group_by(location, month) %>% 
+  summarise_at(vars(temperature), funs(mean, sd, min, max)) %>% 
+  arrange(month, location) %>% 
+  print(n = Inf)
 
 WIDTH = 297/2
 HEIGHT = 210/2
