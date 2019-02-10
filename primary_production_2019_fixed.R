@@ -7,6 +7,10 @@
 # A5寸法
 WIDTH = 297/2
 HEIGHT = 210/2
+
+# 図のテーマ
+source("theme_kawate.R")
+
 # パッケージの読み込み
 library(tidyverse)
 library(lubridate)
@@ -54,12 +58,12 @@ light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^
                                      "Arikawa"))) 
 
 df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
-  select(Date, location, value),
-  light, by = c("Date", "location") ) %>% 
+                  select(Date, location, value),
+                light, by = c("Date", "location") ) %>% 
   filter(str_detect(location, "Tainoura|Sarg"))
 
 df2 %>% mutate(month = month(Date)) %>% 
-ggplot() +
+  ggplot() +
   geom_point(aes(x = ppfd, y = value)) +
   facet_grid(month ~ location)
 
@@ -100,12 +104,12 @@ gtitle = "Gross Ecosystem Production"
 dset01 = 
   df1  %>% 
   filter(str_detect("GEP", key)) 
-  
+
 
 dset01 %>% 
   ggplot(aes(x = month,
              y = value, 
-              color = location,
+             color = location,
              fill = location)) +
   # geom_point(aes(group = month), alpha = 0.5) +
   geom_boxplot(aes(group = month), 
@@ -161,7 +165,7 @@ summary(gam02)
 dset01_nd = 
   dset01 %>% 
   expand(month = seq(1, 12, length = 51), location) 
-  
+
 # type = "response" にすると，自然のスケールの期待値が返ってくる
 dset01_nd = 
   dset01_nd %>% 
@@ -293,12 +297,11 @@ dset03 %>%
              y = value, 
              color = location,
              fill = location)) +
-  # geom_point(aes(group = month), alpha = 0.5) +
   geom_boxplot(aes(group = month), 
                alpha = 0.5,
                size = rel(0.2)) +
-  geom_smooth(fill = "black",
-              color = "black",
+  geom_smooth(aes(linetype = "GAM"),
+              color = "black", fill = "black",
               method = "gam", 
               size = rel(0.4),
               alpha = 0.25,
@@ -310,20 +313,15 @@ dset03 %>%
   scale_y_continuous(ylabel) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5)),
-        axis.line = element_line()) +
+  # facet_rep_wrap("location", nrow = 1)+
   facet_wrap("location", nrow = 1)+
-  theme_classic(base_size=11, base_family='')
-
+  theme_kawate(base_size = 16) 
 
 ggsave(filename = "GAM入り年間純一次生産量.png", 
        width = WIDTH,
        height = HEIGHT,
        dpi = 600,
        units = "mm")
-
 
 gam00 = gam(value ~ s(month, bs = "cc"),
             data = dset03)   # 帰無仮説：location の影響はない

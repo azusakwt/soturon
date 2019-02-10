@@ -33,6 +33,10 @@ month_labels = function() {
 WIDTH = 297/2
 HEIGHT = 210/2
 
+# 図のテーマ
+# source() は別のRファイルを読み込んで実行する
+source("theme_kawate.R")
+
 #言語の変換
 Sys.getlocale("LC_TIME")#確認
 Sys.setlocale("LC_TIME","en_US.UTF-8")#設定
@@ -119,6 +123,8 @@ ggsave(filename = "光環境.png",
        height = HEIGHT,
        units = "mm")  
 
+# guides() を消した
+# geom_smooth() の aes() の中に linetype = "GAM" を指定した
 dset_daily %>% 
   mutate(month = month(Date)) %>% 
   ggplot()+
@@ -129,8 +135,10 @@ dset_daily %>%
                    group =  month),
                alpha = 0.5,
                size = rel(0.4)) +
-  geom_smooth(aes(x= month, y = ppfd, group = location),
+  geom_smooth(aes(x= month, y = ppfd,
+                  linetype = "GAM"),
               method = "gam",
+              method.args = list(family = Gamma(link = "log")),
               fill = "black",
               color = "black",
               size = rel(0.4),
@@ -140,24 +148,16 @@ dset_daily %>%
                      minor_breaks = 1:12,
                      breaks = c(1, 5, 8, 12),
                      labels = month.abb[c(1, 5, 8, 12)]) +
-  scale_y_continuous(name = ylabel,
-                     limits = c(-1, 30),
-                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+  scale_y_continuous(name = ylabel) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5)),
-        axis.line = element_line()) +
+  theme_kawate(16) +
   facet_wrap("location", nrow = 1)
-
-
 
 ggsave(filename = "光環境ボックス.png", 
        width = WIDTH,
        height = HEIGHT,
        units = "mm")  
-
 
 library(mgcv)
 
@@ -166,10 +166,13 @@ dset03 =
   mutate(month = month(Date))
 
 gam00 = gam(ppfd ~ s(month),
+            family = Gamma(link = "log"),
             data = dset03)   # 帰無仮説：location の影響はない
 gam01 = gam(ppfd ~ s(month) + location, 
+            family = Gamma(link = "log"),
             data = dset03) # 対立仮設：location の影響はある
 gam02 = gam(ppfd ~ s(month, by = location) + location, 
+            family = Gamma(link = "log"),
             data = dset03) # 対立仮設：location の影響はある
 # F検定をつかって，二つのモデルの比較
 
