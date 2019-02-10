@@ -27,9 +27,9 @@ df1 =
                            "Arikawa (Sargassum)" = 3)) %>% 
   mutate(location = factor(location, 
                            levels = c(1,2,3),
-                           label = c("Tainoura (Isoyake)",
+                           label = c("Tainoura",
                                      "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)"))) 
+                                     "Arikawa"))) 
 
 df1 = df1 %>% filter(!str_detect(location, "Zostera")) 
 df1 = df1 %>% mutate(location = factor(location)) # 外した要因のレベルも外す
@@ -49,9 +49,9 @@ light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^
                            "arikawagaramo" = 3)) %>% 
   mutate(location = factor(location, 
                            levels = c(1,2,3),
-                           label = c("Tainoura (Isoyake)",
+                           label = c("Tainoura",
                                      "Arikawa (Zostera)",
-                                     "Arikawa (Sargassum)"))) 
+                                     "Arikawa"))) 
 
 df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
   select(Date, location, value),
@@ -225,21 +225,14 @@ gtitle = "Respiration Production"
 dset02 = 
   df1  %>% 
   filter(str_detect("RP", key)) %>% 
-  spread(position, value) %>% 
+  # spread(position, value) %>% 
   mutate(value = `1m`+`0m`)
 
 dset02 %>% 
   ggplot(aes(x = month,
              y = value, 
-             color = location,
-             fill = location)) +
-  # geom_point(aes(group = month), alpha = 0.5) +
-  geom_boxplot(aes(group = month), 
-               alpha = 0.5,
-               size = rel(0.2)) +
-  geom_smooth(fill = "black",
-              color = "black",
-              method = "gam", 
+             color = location)) +
+  geom_smooth(method = "gam", 
               size = rel(0.4),
               alpha = 0.25,
               formula = y ~ s(x, bs = "cc"),
@@ -252,10 +245,19 @@ dset02 %>%
   scale_y_continuous(ylabel) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(0.8))) +
-  facet_wrap("location", nrow = 1)
+  theme_classic(base_size=11, base_family='')+
+  theme(legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5))) 
 
+ggsave(filename = "呼吸量.png",
+       width = WIDTH,
+       height = HEIGHT,
+       dpi = 600,
+       units = "mm")
 # Gamma 分布のデフォルトのリンク関数は 1/y
 # URL: http://hosho.ees.hokudai.ac.jp/~kubo/log/2009/kubolog20091212.html
 # URL: https://logics-of-blue.com/平滑化スプラインと加法モデル/ 
@@ -309,13 +311,17 @@ dset03 %>%
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   guides(color = FALSE, fill = FALSE) +
-  theme(axis.text.x = element_text(size = rel(0.8)),
+  theme(axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5)),
         axis.line = element_line()) +
-  facet_wrap("location", nrow = 1)
+  facet_wrap("location", nrow = 1)+
+  theme_classic(base_size=11, base_family='')
+
 
 ggsave(filename = "GAM入り年間純一次生産量.png", 
        width = WIDTH,
        height = HEIGHT,
+       dpi = 600,
        units = "mm")
 
 
