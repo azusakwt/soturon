@@ -28,11 +28,13 @@ d1 =
   separate(fnames, c("x", "y", "location", "position", "z","w")) %>% 
   select(location, position, datetime:sol) %>% 
   mutate(datetime = parse_date_time(datetime, c("mdyT!"), locale = "ja_JP.utf8"))
-
+# d1 %>% pull(ppfd) %>% range(na.rm=T)
+# d1 %>% pull(sol) %>% range(na.rm=T)
 d1 %>% 
   mutate(sol = ifelse(is.na(sol), 0, sol),
          ppfd = ifelse(is.na(ppfd), 0, ppfd)) %>% 
   mutate(ppfd_fixed = 4.6*sol + ppfd) %>% 
   mutate(datetime = round_date(datetime, "10 mins")) %>% 
   select(location, position, datetime, ppfd = ppfd_fixed) %>% 
+  mutate(ppfd = ifelse(ppfd < 0, NA, ppfd)) %>% 
   write_csv(path = "~/Lab_Data/kawatea/Modified_Data/surface_ppfd_all.csv")
