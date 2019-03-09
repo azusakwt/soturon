@@ -192,4 +192,9 @@ dset_daily %>%
   group_by(location) %>% 
   summarise(mean(daily_ppfd))
 
-
+# 各月の計算
+dset_daily %>% 
+  group_by(location, month) %>% 
+  summarise_at(vars(ppfd), funs(mean, sd, min, max)) %>% 
+  arrange( location) %>% 
+  print(n = Inf)

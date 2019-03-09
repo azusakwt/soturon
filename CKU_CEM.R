@@ -117,14 +117,14 @@ cem %>%
   geom_line(aes(x = Date, y = mean_speed, group = Date))
 
 #おかしなデータ削除
-# cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
-# cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
-# cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
 
 #月ごとにグループ化できるようにする
 cem = cem %>% 
@@ -138,8 +138,8 @@ cem =
                            "arikawagaramo" = 2)) %>% 
   mutate(location = factor(location, 
                            levels = c(1,2),
-                           label = c("Tainoura (Isoyake)",
-                                     "Arikawa (Sargassum)")))
+                           label = c("Tainoura",
+                                     "Arikawa")))
 
 
 #作図
@@ -150,18 +150,24 @@ gtitle = ""
 cem %>% 
   group_by(location,month) %>% 
   drop_na() %>% 
-  summarise(speed = mean(mean_speed)) %>% 
-  ggplot()+
-  geom_point(aes(x = month, y = speed, color = location))+
-  geom_line(aes(x = month, y = speed, color = location))+
+  summarise(speed_mean = mean(mean_speed),
+            sd_speed = sd(mean_speed),
+            n = sum(!is.na(mean_speed))) %>% 
+  mutate(l95 = speed_mean - sd_speed / sqrt(n -1),
+         u95 = speed_mean + sd_speed / sqrt(n -1)) %>%
+  ggplot(aes(x = month, y = speed_mean, color = location))+
+  geom_point(position=position_dodge(0.1)) +
+  geom_line( position=position_dodge(0.1)) +
+  geom_errorbar(aes(ymin = l95, ymax = u95), width = 0,
+                position = position_dodge(0.1)) +
   scale_x_continuous(name = xlabel,
                      labels = month_labels(),
                      breaks = 1:12,
                      limits = c(1,12)) +
   scale_y_continuous(name = ylabel,
-                     limits = c(0, 10),
-                     breaks = c(0, 2, 4, 6, 8, 10)) +
-  scale_fill_brewer(name = "", palette = "Dark2") +
+                     limits = c(0, 8),
+                     breaks = c(0, 2, 4, 6, 8)) +
+  scale_color_brewer(name = "", palette = "Dark2") +
   ggtitle(gtitle) +
   theme(legend.position = c(1,1),
         legend.justification = c(1,1),

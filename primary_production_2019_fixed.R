@@ -223,7 +223,7 @@ ggsave(filename = "GAM入り年間総一次生産量(0m+1m).png",
 
 #RPの解析-----------------------------------
 xlabel = ""
-ylabel = expression("ER"~(g~O[2]~m^{-3}~day^{-1}))
+ylabel = expression("ER"~(g~O[2]~m^{-2}~day^{-1}))
 gtitle = "Respiration Production"
 
 dset02 = 
@@ -237,7 +237,12 @@ dset02 %>%
              y = value, 
              color = location,
              fill = location)) +
-    geom_smooth(method = "gam", 
+  geom_boxplot(aes(group = month), 
+               alpha = 0.5,
+               size = rel(0.2)) +
+  geom_smooth(aes(linetype = "GAM"),
+              color = "black", fill = "black",
+              method = "gam", 
               size = rel(0.4),
               alpha = 0.25,
               formula = y ~ s(x, bs = "cc"))  + 
@@ -249,6 +254,7 @@ dset02 %>%
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2") +
   # facet_rep_wrap("location", nrow = 1)+
+  facet_wrap("location", nrow = 1)+
   theme_kawate(base_size = 16) 
 
 ggsave(filename = "呼吸量.png",
@@ -279,7 +285,7 @@ summary(gam02)
 
 #NEP-----------------------------------------------
 xlabel = ""
-ylabel = expression("NEP"~(g~O[2]~m^{-3}~day^{-1}))
+ylabel = expression("NEP"~(g~O[2]~m^{-2}~day^{-1}))
 gtitle = ""
 
 dset03 = 
@@ -328,5 +334,19 @@ gam02 = gam(value ~ s(month, bs = "cc", by = location) + location,
 anova(gam00, gam01, gam02, test = "F")
 summary(gam02)
 
+# 各月の計算
+dset03 %>% 
+  group_by(location, month) %>% 
+  drop_na() %>% 
+  summarise_at(vars(value), funs(mean, sd, min, max)) %>% 
+  arrange( location) %>% 
+  print(n = Inf)
 
+
+dset02 %>% 
+  group_by(location, month) %>% 
+  drop_na() %>% 
+  summarise_at(vars(value), funs(mean, sd, min, max)) %>% 
+  arrange( location) %>% 
+  print(n = Inf)
 
