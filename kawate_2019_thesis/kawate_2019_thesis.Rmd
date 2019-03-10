@@ -10,8 +10,12 @@ header-includes:
   - \usepackage{pdflscape}
   - \usepackage{float}
   - \usepackage[section]{placeins}
+  - \usepackage{hanging}
+  - \newcommand{\bhanging}{\begin{hangparas}{1cm}{1}}
+  - \newcommand{\ehanging}{\end{hangparas}}
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}  
+  - \setpagelayout{hmargin={3cm, 2.5cm},vmargin={2.5cm,2.5cm}}
 output: 
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -22,13 +26,14 @@ output:
     toc_depth: 3
     includes:
       in-header: force-figure-position.tex
+    pandoc_args: --template=report_template.latex
 documentclass: bxjsarticle
 classoption: "xelatex, ja=standard"
 fig_crop: yes
 fig_caption: yes
 lot: yes
 lof: yes
-fontsize: 10pt
+fontsize: 12pt
 geometry: a4paper
 link-citations: true
 bibliography: 
@@ -38,6 +43,9 @@ monofont: "Source Code Pro"
 CJKmainfont: "Noto Serif CJK JP"
 CJKsansfont: "Noto Sans CJK JP"
 ---
+
+\clearpage
+\newpage 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = TRUE,
@@ -132,10 +140,13 @@ Xiao *et al*. (2008) は，落葉広葉樹林とバイオマスが小さい灌�
 このように陸上生態系では，生態系によってNEP の季節変動が異なることが知られている。
 沿岸生態系は藻場，磯焼け域，サンゴ礁，マングローブ林など様々な生態系があるため，陸上生態系のように生態系ごとに NEP の季節変動は変わると考えた。
 沿岸生態系における季節変動を，開放系溶存酸素法を用いて研究した例はいくつかある。
-しかし，その多くがアマモ場 (Welsh *et al*. 2000 ; Murrell *et al.*) を対象とした研究であり，異なる生態系の NEP の季節変動を比べた研究は非常に少ない。
+しかし，その多くがアマモ場 (Welsh *et al*. 2000 ; Murrell *et al.* 2017) を対象とした研究であり，異なる生態系の NEP の季節変動を比べた研究は非常に少ない。
 
 そこで本研究は，沿岸域の代表的な生態系として，高い生産性をもつ藻場生態系と，藻場が消失した磯焼け生態系に着目し，開放系溶存酸素法を用いて，NEPの季節変動を明らかにすることを目的とした。
 そして，本研究において，バイオマスの大きい藻場生態系の NEP はバイオマスが小さい磯焼け生態系より高いと仮説を立てた。
+
+\clearpage
+\newpage
 
 # 方法
 
@@ -186,11 +197,14 @@ GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を�
 光量子量が 0 の時を夜，それ以外を昼とした。
 昼間も夜間と同じ ER であると仮定し， 1 日あたりの ER を算出した。
 
+\clearpage
+\newpage
+
 # 結果
 
 それぞれの生産量の季節変動は，データを月ごとに分け，それぞれの月の生産量として結果に示した。
 それぞれのグラフは線グラフ又は箱ひげ図で表し，ポイントおよび箱の中のポイントは平均値，箱の中央の横線は中央値，箱の下の横線は第一四分位数，箱の上の横線は第三四分位数，箱の下に伸びる縦線の端が最小値，箱の上に伸びる縦線の端が最大値を示している。
-さらに， GAM （表\@ref(fig:gam-table) ￥を参考に）によって曲線をあてはめた。曲線の網掛け部分は 95 % 信頼区間である。
+さらに， GAM （表\@ref(tab:gam-table) を参考に）によって曲線をあてはめた。曲線の網掛け部分は 95 % 信頼区間である。
 
 ## 水温
 
@@ -461,22 +475,25 @@ NEP2 =
   arrange(location, month)
 ```
 
-有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 `r NEP2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
-6 月， 7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Arik"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
+有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 `r NEP2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
+6 月， 7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Arik"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
 その後，12 月にかけて減少し，最小値  `r NEP2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
 鯛ノ浦湾は 1 月に最小値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 1) %>% pull(mean) %>% round(digits = 1)`mg O~2~ m^-2^ day^-1^ を記録した後，5 月にかけて上昇し最大値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 5) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
-6 月，7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
+6 月，7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
 その後，12 月にかけて減少した（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 
 両藻場とも，生産量が 1 年を通して正の値となった。
 また，鯛ノ浦湾は，有川地先に比べて NEP の季節変動を緩やかであった。
+
+\clearpage
+\newpage
 
 # 考察
 
 ## 2 地点における NEP の季節変動
 
 1 年を通して，有川地先の方が鯛ノ浦湾に比べて NEP が高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
-これは，光量子量が 1 年を通して，有川地先の方が高かった（図）ためである。
+これは，光量子量が 1 年を通して，有川地先の方が高かった（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）ためである。
 一般的に光量子量が高くなることで，海藻の NEP が高くなることが知られている (村瀬 2001 ; Terada *et al*. 2013) 。
 そのため，光量子量が高い有川地先では，鯛ノ浦湾に比べて光合成が活発であったと考えられる。
 
@@ -850,11 +867,14 @@ NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃�
 ## 鯛ノ浦における NEP について
 
 磯焼け生態系である鯛ノ浦にて， NEP が負の値をとることはなかった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
-海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる(Fieled 1998)。
+海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる(Field 1998)。
 そのため，鯛ノ浦湾におけるNEPを底上げしたと考えられる。
 しかし，本研究の中では，海藻類による NEP とプランクトンによる NEP を分けることはできない。
 そのため，植物プランクトンによる NEP の推定はできない。
 今後，プランクトンによる生産量を推定することは，磯焼け生態系における NEP の変動を理解するうえで重要なことである。
+
+\clearpage
+\newpage
 
 # まとめ
 
@@ -865,74 +885,52 @@ NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃�
 こうした生態系の NEP の季節変動を調べることでより良く沿岸生態系の NEP を理解できると考えられる。
 また，植物プランクトンによる NEP やバイオマスの季節変動を追う必要がある。
 
+\clearpage
+\newpage
+
 # 謝辞
 
-本研究を行うにあたり，研究計画等多くの御助言，ご指導いただきました長崎大学海洋未来イノベーション機構環東シナ海環境資源研究センター准教授Gregory　N. Nishihara　博士に深謝申し上げます。
-本研究を行うにあたり調査地の提供をしてくださいました新上五島町役場　伊賀　剛氏を初め，組合の方々に厚く御礼を申し上げます。
-本研究の野外調査，供試材料採集を行うにあたり，多くの御協力，ご支援を頂いた長崎大学環東シナ海環境資源研究センター日野出　賢二郎氏，井上　幸男氏，大崎　　幸一氏，紙崎　星美氏，Dominic Belleza 氏，畑田　菜緒氏，松田　悠平氏に御礼を申し上げます。
+本研究を行うにあたり，研究計画等多くの御助言，ご指導いただきました長崎大学海洋未来イノベーション機構環東シナ海環境資源研究センター准教授 Gregory N. Nishihara 博士に深謝申し上げます。
+本研究を行うにあたり調査地の提供をしてくださいました新上五島町役場総合政策課政策推進班 伊賀剛 氏を初め，組合の方々に厚く御礼を申し上げます。
+本研究の野外調査，供試材料採集を行うにあたり，多くの御協力，ご支援を頂いた長崎大学環東シナ海環境資源研究センター日野出　賢二郎氏，井上　幸男氏，大崎　幸一氏，紙崎　星美氏，Dominic Belleza 氏，畑田　菜緒氏，松田　悠平氏に御礼を申し上げます。
+
+\clearpage
+\newpage
 
 # 参考文献
 
-Chapin, F. S., Pamela, A. M., Peter, M. V. 2018. Principles of
-Terrestrial Ecosystem 　　Ecology Second Edition （加藤　知道監訳
-『生態系生態学　第２版』森北出　　版 2018 年）pp 1-437.
+\bhanging
 
-Field, C. B., Behrenfeld, M. J., Randerson, J. T., Falkowski, P. 1998.
-Primary Production of the Biosphere : Integrating Terrestrial and
-Oceanic Components. Science 281:237-240.
+Chapin, F. S., Pamela, A. M., Peter, M. V. 2018. *Principles of Terrestrial Ecosystem Ecology, Second Edition* （加藤知道監訳『生態系生態学第２版』森北出版 2018 年）, pp 1 - 437.
 
-IPCC. 2007. Climate Change 2007 : Impacts, Adaptation and
-Vulnerability.Martin, P. et 　　al. Cambridge University Press,
-Cambridge, pp 1-272.
+Field, C. B., Behrenfeld, M. J., Randerson, J. T., Falkowski, P. 1998. Primary Production of the Biosphere : Integrating Terrestrial and Oceanic Components. *Science* 281: 237 - 240.
 
-Murrell, M. C., Caffrey, J. M., Marcovich, D. T., Beck, M. W., Jarvis,
-B. M., Hagy, J. D.
+IPCC. 2007. *Climate Change 2007 : Impacts, Adaptation and Vulnerability*. Martin, P. *et al.* Cambridge University Press, Cambridge, pp 1 - 272.
 
-　　2017. Seasonal Oxygen Dynamics in a Warm Temperate Estuary: Effects
-of Hydrologic Variability on Measurements of Primary Production,
-Respiration, and 　　Net Metabolism. *Estuaries and Coasts.*
-doi:10.1007/s12237-017-0328-9.
+Murrell, M. C., Caffrey, J. M., Marcovich, D. T., Beck, M. W., Jarvis, B. M., Hagy, J. D. 2017. Seasonal oxygen dynamics in a warm temperate estuary: Effects of hydrologic variability on measurements of primary production, respiration, and net metabolism. *Estuaries and Coasts.* doi:10.1007/s12237-017-0328-9.
 
-村瀬昇 2001. 褐藻ノコギリモク Surgassum macrocarpam C.Agardh
-の生態学的　　研究，水産大学校研究業績 49 (4)131 - 212.
+村瀬昇 2001. 褐藻ノコギリモク *Sargassum macrocarpum* C.Agardh の生態学的研究，水産大学校研究業績 49(4): 131 - 212.
 
-ODUM, H. T. 1956. Primary Production in Flowing Waters. Limnology and
-Oceanography. **1**(2), 102–117. doi:10.4319/lo.1956.1.2.0102.
+Odum, H. T. 1956. Primary production in flowing waters. *Limnology and Oceanography*. 1(2): 102 – 117. doi:10.4319/lo.1956.1.2.0102.
 
-Pérez-Ruzafa, A., Marcos, C., Pérez-Ruzafa, I. M., Barcala, E., Hegazi,
-M. I., Quispe, J. 2007. Detecting changes resulting from human pressure
-in a naturally quick-changing and heterogeneous environment: Spatial and
-temporal scales of variability in coastal lagoons. Estuarine, Coastal
-and Shelf Science. 75, 175–188. doi:10.1016/j.ecss.2007.04.030.
+Pérez-Ruzafa, A., Marcos, C., Pérez-Ruzafa, I. M., Barcala, E., Hegazi, M. I., Quispe, J. 2007. Detecting changes resulting from human pressure in a naturally quick-changing and heterogeneous environment: Spatial and temporal scales of variability in coastal lagoons. *Estuarine, Coastal and Shelf Science* 75: 175 – 188. doi:10.1016/j.ecss.2007.04.030.
 
-R Core Team 2018. R: A language and environment for statistical
-computing. R Foundation for Statistical Computing,Vienna, Austria. URL
-http://www.R-project.org/.
+R Core Team 2018. R: A language and environment for statistical computing. R Foundation for Statistical Computing,Vienna, Austria. URL: http://www.R-project.org/.
 
-Staehr, P. A., Testa, J. M., Kemp, W. M., Cole, J. J., Sand-Jensen, K.,
-& Smith, S. V. 2012. The metabolism of aquatic ecosystems: History,
-applications, and future challenges. Aquatic Sciences. 74, 15–29.
-doi:10.1007/s00027-011-0199-2.
+Staehr, P. A., Testa, J. M., Kemp, W. M., Cole, J. J., Sand-Jensen, K., & Smith, S. V. 2012. The metabolism of aquatic ecosystems: History, applications, and future challenges. *Aquatic Sciences* 74: 15–29. doi:10.1007/s00027-011-0199-2.
 
-Terada, R., Inoue, S., Nishihara, G. N. 2013. The effect of light and
-temperature on the growth and photosynthesis of Gracilariopsis chorda
-(Gracilariales, Rhodophtya) from geographically separated locations of
-Japan. J Appl Phycol. 25:1863–1872.
+Terada, R., Inoue, S., Nishihara, G. N. 2013. The effect of light and temperature on the growth and photosynthesis of *Gracilariopsis chorda* (Gracilariales, Rhodophtya) from geographically separated locations of Japan. *Journal of Applied Phycololgy* 25: 1863 – 1872.
 
-土屋勇太朗・Gregory N. Nishihara・寺田竜太 2012.
-酸素電極法とパルス変調クロロフィル蛍光法を用いた鹿児島産ホンダワラ属（ヒバマタ目）藻類５種，マメタワラ，ヤツマタモク，ヒジキ，コブクロモク，キレバモクの光合成・温度特性，日本水産学会
-78(2) 189-197.
+土屋勇太朗・Gregory N. Nishihara・寺田竜太 2012. 酸素電極法とパルス変調クロロフィル蛍光法を用いた鹿児島産ホンダワラ属（ヒバマタ目）藻類５種，マメタワラ，ヤツマタモク，ヒジキ，コブクロモク，キレバモクの光合成・温度特性，日本水産学会 78(2): 189-197.
 
-Welsh, D. T., Bartoli, M., Nizzoli., D., Giuseppe C., Stéphane A. R.,
-Pierluigi V. 2000. Denitrification, nitrogen fixation, community primary
-productivity and inorganic-N and oxygen fluxes in an intertidal *Zostera
-noltii* meadow. Marine Ecology Progress Series. 208:65-77.
+Welsh, D. T., Bartoli, M., Nizzoli., D., Giuseppe C., Stéphane A. R., Pierluigi V. 2000. Denitrification, nitrogen fixation, community primary productivity and inorganic-N and oxygen fluxes in an intertidal *Zostera noltii* meadow. *Marine Ecology Progress Series*. 208:65 - 77. 
 
-Xiao, J., Zhuang, Q., Baldocchi, D.D., Law, B.E., Richardson, A.D., et
-al. 2008. Estimation of net ecosystem carbon exchange for the
-conterminous United States by combining MODIS andAmeriFlux data.
-agricultural and forest meteorology. 148:1827-1847.
+Xiao, J., Zhuang, Q., Baldocchi, D.D., Law, B.E., Richardson, A.D., et al. 2008. Estimation of net ecosystem carbon exchange for the conterminous United States by combining MODIS and AmeriFlux data. *Agricultural and Forest Meteorology* 148: 1827 - 1847.
 
+\ehanging
+
+\clearpage
+\newpage
 
 # 図
 
@@ -1125,6 +1123,9 @@ CAP = "The mean monthly nitrite-nitrate (top) and phosphate (bottom) concentrati
 nutrient_plot
 ```
 
+\clearpage
+\newpage
+
 # 表
 
 ```{r temperature-table, results = "asis"}
@@ -1270,3 +1271,8 @@ cat("\n\\clearpage\n")
 # 
 # cat("\n\\clearpage\n")
 ```
+
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage

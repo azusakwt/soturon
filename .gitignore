@@ -13,3 +13,5 @@
 *.pdf
 *.tex
 *.docx
+*_cache/
+*_files/
