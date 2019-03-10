@@ -99,11 +99,11 @@ source("../theme_kawate.R")
 # 諸言
 
 近年，社会問題となっている地球温暖化の主な原因は，人間活動によって放出される温室効果ガスの増加である。
-大気中の二酸化炭素濃度が上昇したことだと言われている( IPCC 2007 )。
+大気中の二酸化炭素濃度が上昇したことだと言われている(IPCC 2007)。
 そのことから，炭素固定が注目されている。
 大気中に放出される炭素は，年間約 72 億トンと言われている。そのうちの 13 % は陸上生態系に固定され， 30 % は海洋に固定される。
-残りの 57 % は大気中に残る。海洋に固定される炭素の10 % は沿岸生態系によって固定される ( IPCC 2007 )。
-このことから，沿岸域は炭素固定における重要な役割を担っていると言える。生態系による炭素収支は生態系純一次生産量 ( Net Ecosystem Production; NEP ) で表すことができる（ Chapin *et al*. 2018 ）。
+残りの 57 % は大気中に残る。海洋に固定される炭素の10 % は沿岸生態系によって固定される (IPCC 2007)。
+このことから，沿岸域は炭素固定における重要な役割を担っていると言える。生態系による炭素収支は生態系純一次生産量 (Net Ecosystem Production; NEP) で表すことができる（Chapin *et al*. 2018）。
 沿岸生態系における NEPの推定は，バイオマス法を多く用いられてきた。
 バイオマス法は，生態系を構成する生物の成長からNEP を推定する方法である。
 この方法は藻体の生長を直接計測して NEP の推定を行う。
@@ -111,28 +111,28 @@ source("../theme_kawate.R")
 一つは，バイオマス法を用いる際に一定量の刈り取りが必要であることだ。
 刈り取りを繰り返すことで，その生態系の破壊につながりかねない。
 また，対象の生物の成長を待つ必要があり，短い期間での測定は難しいことである。
-沿岸域の環境は短い期間でも大きく変動する ( Pérez-Ruzafa *et al*. 2007 )。
+沿岸域の環境は短い期間でも大きく変動する (Pérez-Ruzafa *et al*. 2007)。
 その影響は NEP にも表れていると考えられる。
 そのため，短い測定間隔での観測が必要である。
 さらに，生態系にはプランクトンや，生息する魚類なども含まれている。
 バイオマス法では，海藻や海草などその生態系を構成する生物の成長しかみることができない。
-そのため，NEP ではなく，純一次生産量 ( Net Primary Production; NPP )を測定していることになる。 
+そのため，NEP ではなく，純一次生産量 (Net Primary Production; NPP)を測定していることになる。 
 NEPを推定するためには，生態系に生息する全ての生物を考慮する必要がある。
 
-そこで，より正確に NEP を推定するためには開放系溶存酸素法 ( Odum 1965 ) を用いる必要があると考えられた。
+そこで，より正確に NEP を推定するためには開放系溶存酸素法 (Odum 1965) を用いる必要があると考えられた。
 開放系溶存酸素法は生態系の溶存酸素濃度の変動から呼吸量や生産量を推定する方法である。
 そのため，生態系に影響を与えることなく，生態系に生息する生物全体を考慮することができる。
-さらに，測定間隔の自由度が高く，短い間隔での測定が可能である ( Staehr *et al*., 2012 )。
+さらに，測定間隔の自由度が高く，短い間隔での測定が可能である (Staehr *et al*. 2012)。
 そのため，より正確に NEP を推定することができる。本研究では，この開放系溶存酸素法を用いて研究を進めた。
 
 陸上生態系では，生態系ごとに NEP の季節変動が異なることが知られている。
-Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌木地における NEP の季節変動を調査した。
+Xiao *et al*. (2008) は，落葉広葉樹林とバイオマスが小さい灌木地における NEP の季節変動を調査した。
 落葉広葉樹林は季節変動が大きかった。
 一方で，灌木地では季節変動は緩やかであった。
 このように陸上生態系では，生態系によってNEP の季節変動が異なることが知られている。
 沿岸生態系は藻場，磯焼け域，サンゴ礁，マングローブ林など様々な生態系があるため，陸上生態系のように生態系ごとに NEP の季節変動は変わると考えた。
 沿岸生態系における季節変動を，開放系溶存酸素法を用いて研究した例はいくつかある。
-しかし，その多くがアマモ場 ( Welsh *et al*. 2000 ; Murrell *et al.* )を対象とした研究であり，異なる生態系の NEP の季節変動を比べた研究は非常に少ない。
+しかし，その多くがアマモ場 (Welsh *et al*. 2000 ; Murrell *et al.*) を対象とした研究であり，異なる生態系の NEP の季節変動を比べた研究は非常に少ない。
 
 そこで本研究は，沿岸域の代表的な生態系として，高い生産性をもつ藻場生態系と，藻場が消失した磯焼け生態系に着目し，開放系溶存酸素法を用いて，NEPの季節変動を明らかにすることを目的とした。
 そして，本研究において，バイオマスの大きい藻場生態系の NEP はバイオマスが小さい磯焼け生態系より高いと仮説を立てた。
@@ -148,10 +148,10 @@ Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌
 
 ## 使用した観測機器
 
-本調査は，溶存酸素ロガー ( HOBO U26 溶存酸素ロガー，Onset Computer Corporation ) を用いて，溶存酸素濃度 ( mg O~2~L^-1^ ) と水温 ( °C ) ，光量子ロガー ( Odyssey Submersible PAR Logger, Dataflow Systems Ltd. ) を用いて光量子量 ( µmol s^-1^ ) の観測を行った。
+本調査は，溶存酸素ロガー (HOBO U26 溶存酸素ロガー，Onset Computer Corporation) を用いて，溶存酸素濃度 (mg O~2~L^-1^) と水温 (°C) ，光量子ロガー (Odyssey Submersible PAR Logger, Dataflow Systems Ltd.) を用いて光量子量 (µmol s^-1^) の観測を行った。
 各ロガーのサンプリングインターバルは，10 分に統一した。
-観測した溶存酸素ロガーは，データ回収時に，CTD を用いて測定した海水塩濃度を用いて塩分補正を行い，光学式溶存酸素メーター ( ProODO, YSI, Inc. ) によってキャリブレーションを行った。
-光量子量は，LI-190 ( Quantum Sensor, Li-Cor, Inc.) を基準とし補正値を算出し，補正を行った。
+観測した溶存酸素ロガーは，データ回収時に，CTD を用いて測定した海水塩濃度を用いて塩分補正を行い，光学式溶存酸素メーター (ProODO, YSI, Inc.) によってキャリブレーションを行った。
+光量子量は，LI-190 (Quantum Sensor, Li-Cor, Inc.) を基準とし補正値を算出し，補正を行った。
 
 ## 観測方法
 
@@ -168,12 +168,12 @@ Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌
 
 ## 解析方法
 
-NEP の算出には，統計解析ソフト R version 3.5.2 ( R Development Core Team 2018 ) を使用した。
-得られた溶存酸素量のデータに正規分布に従う一般化加法モデル ( Generalized Additive Model ) をあてはめた，リンク関数を恒等関数とした。
+NEP の算出には，統計解析ソフト R version 3.5.2 (R Development Core Team 2018) を使用した。
+得られた溶存酸素量のデータに正規分布に従う一般化加法モデル (Generalized Additive Model) をあてはめた，リンク関数を恒等関数とした。
 GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を積算したものをその日の NEP とした（式 1）。
 
 \begin{equation}
-\text{NEP} = \sum_{i}^{24}\left(\frac{dC}{dT}\right)
+\text{NEP} = \sum_{i = 1}^{24}\left(\frac{dC}{dT}\right)
 \end{equation}
 
 また，夜間は光合成が行われず，呼吸のみが行われるため，夜間の生産量を生態系呼吸量とし， 1 時間あたりの 生態系呼吸量 (Ecosystem Respiration; ER) を算出した（式 2）。
@@ -373,8 +373,8 @@ light2 =
 光量子量データは，1 日ごとに積算し，縦軸は 1 日あたりの積算光量子量で示した。
 両地点とも，1 月から 4 月にかけて上昇し，7 月から 12 月にかけて減少する傾向が見られた（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
 また，4 月と 7 月に高くることを観測した。
-有川地先の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day^-1^  ，7 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` mol day~-1~  となり，12 月に最小値 `r light2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ を記録した。
-鯛ノ浦湾の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Tainoura"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day~-1~  ，7 月に `r temperature2 %>% filter(str_detect(location, "Tainoura"), month == 7) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ となり，2 月に最小値 `r light2 %>% filter(str_detect(location, "Tainoura"), month == 2) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ を記録した。
+有川地先の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day^-1^  ，7 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` mol day^-1^  となり，12 月に最小値 `r light2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)`  mol day^-1^ を記録した。
+鯛ノ浦湾の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Tainoura"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day^-1^  ，7 月に `r temperature2 %>% filter(str_detect(location, "Tainoura"), month == 7) %>% pull(mean) %>% round(digits = 1)`  mol day^-1^ となり，2 月に最小値 `r light2 %>% filter(str_detect(location, "Tainoura"), month == 2) %>% pull(mean) %>% round(digits = 1)`  mol day^-1^ を記録した。
 1 年間を通して，有川地先の方が鯛ノ浦湾より，光量子量が高くなった。
 
 ## 生態系純一次生産量 (NEP)
@@ -461,11 +461,11 @@ NEP2 =
   arrange(location, month)
 ```
 
-有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 `r NEP2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mg O~2~m~-2~ day~-1~ を記録した。
-6 月， 7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Arik"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
-その後，12 月にかけて減少し，最小値  `r NEP2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
-鯛ノ浦湾は 1 月に最小値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 1) %>% pull(mean) %>% round(digits = 1)`mg O~2~ m~-2~ day~-1~ を記録した後，5 月にかけて上昇し最大値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 5) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
-6 月，7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m~-2~ day~-1~ を記録した。
+有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 `r NEP2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
+6 月， 7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Arik"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
+その後，12 月にかけて減少し，最小値  `r NEP2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
+鯛ノ浦湾は 1 月に最小値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 1) %>% pull(mean) %>% round(digits = 1)`mg O~2~ m^-2^ day^-1^ を記録した後，5 月にかけて上昇し最大値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 5) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m^-2^ day^-1^ を記録した。
+6 月，7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m^-2^ day^-1^ を記録した。
 その後，12 月にかけて減少した（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 
 両藻場とも，生産量が 1 年を通して正の値となった。
@@ -475,16 +475,16 @@ NEP2 =
 
 ## 2 地点における NEP の季節変動
 
-1 年を通して，有川地先の方が鯛ノ浦湾に比べて NEP が高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)））。
-これは，光量子量が 1 年を通して，有川地先の方が高かった（図）ためであると考えられる。
-一般的に光量子量が高くなることで，海藻の NEP が高くなることが知られている ( 村瀬 2001 ; Terada *et al*. 2013 ) 。
+1 年を通して，有川地先の方が鯛ノ浦湾に比べて NEP が高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
+これは，光量子量が 1 年を通して，有川地先の方が高かった（図）ためである。
+一般的に光量子量が高くなることで，海藻の NEP が高くなることが知られている (村瀬 2001 ; Terada *et al*. 2013) 。
 そのため，光量子量が高い有川地先では，鯛ノ浦湾に比べて光合成が活発であったと考えられる。
 
 また， NEP の季節変動は有川地先の方が大きかった。
 これは，生態系の状態が異なるためだと考えられる。
 有川地先は，生産性の高い藻場生態系であるのに対し，鯛ノ浦は藻場が消失した磯焼け生態系である。
 この違いが NEP の変動に表れたと考えられる。
-これは，陸上生態系における，バイオマスが小さい灌木地の NEP の季節変動が，バイオマスが大きい落葉広葉樹林に比べて緩やかであること ( Xiao *et al*. 2008 ) と傾向が一致した。
+これは，陸上生態系における，バイオマスが小さい灌木地の NEP の季節変動が，バイオマスが大きい落葉広葉樹林に比べて緩やかであること (Xiao *et al*. 2008) と傾向が一致した。
 
 ## 4, 8 月の NEP
 ```{r}
@@ -574,14 +574,14 @@ RP2 =
 
 両地点において， NEP は 4 月と 8 月に高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 4 月に NEP が高くなった要因は高い光量子量と水温が 20 ℃ であったことが関係していると考えられる。
-土屋ら ( 2012 ) は，褐藻に属するホンダワラ類の純一次生産量 ( Net Primary Production ; NPP ) が水温 20 ℃ のとき，高くなることを明らかにしている。
+土屋ら (2012) は，褐藻に属するホンダワラ類の NPP が水温 20 ℃ のとき，高くなることを明らかにしている。
 このことからも，4 月に NEP が高くなる要因として，水温が関係していると考えられた。
 また， 8 月に NEP が高くなる要因は高い光量子量と高い水温であると考えられる。
 8 月の NEP は 4 月に比べて低い値を示した。
 この原因は，水温上昇による ER の上昇であると考えられた。
 しかし，本研究で記録した ER は 8 月よりも 4 月の方が高くなった（表\@ref(tab:RP-table); 図\@ref(fig:RP-plot)）。
 このことから， ER の上昇が原因とは言えなかった。
-土屋ら ( 2012 ) は，水温が上昇することで， NPP が減少することを明らかにした。
+土屋ら (2012) は，水温が上昇することで， NPP が減少することを明らかにした。
 このことから， 8 月の NEP は，水温が上昇したことで，抑えられたのだと考えられる。
 
 ## 6, 7 月の NEP
@@ -834,7 +834,7 @@ nutrient2 =
 ```
 両地点において， 6 月と 7 月に NEP が低くなることが記録された（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 本研究で得られた光量子量データによると，6 月の光量子量は 4 月や 8 月に比べて低くなった（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
-光量子量が低いと，光合成速度は低下することがわかっている（ 村瀬 2001 ; Terada *et al*. 2013 ）ため， 6 月は光合成が抑制され， NEP が低下したと考えられる。
+光量子量が低いと，光合成速度は低下することがわかっている（村瀬 2001 ; Terada *et al*. 2013）ため， 6 月は光合成が抑制され， NEP が低下したと考えられる。
 しかし， 7 月は，光量子量が 2 地点において高くなっていた（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
 このため，光量子量が原因ではないと考えられる。
 その他にも，河川からの流入による撹拌や栄養塩の季節変動などが考えられた。
@@ -850,7 +850,7 @@ NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃�
 ## 鯛ノ浦における NEP について
 
 磯焼け生態系である鯛ノ浦にて， NEP が負の値をとることはなかった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
-海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる( Fieled 1998 )。
+海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる(Fieled 1998)。
 そのため，鯛ノ浦湾におけるNEPを底上げしたと考えられる。
 しかし，本研究の中では，海藻類による NEP とプランクトンによる NEP を分けることはできない。
 そのため，植物プランクトンによる NEP の推定はできない。
@@ -934,7 +934,7 @@ conterminous United States by combining MODIS andAmeriFlux data.
 agricultural and forest meteorology. 148:1827-1847.
 
 
-# Figures
+# 図
 
 ```{r, cache = TRUE, results="hide"}
 createScaleBar <- function(lon,lat,distanceLon,distanceLat,distanceLegend, dist.units = "km"){
@@ -1111,7 +1111,7 @@ NEP_plot
 ```
 
 ```{r RP-plot, fig.cap = CAP}
-CAP = "RP"
+CAP = "A boxplot of the mean ecosystem respiration rate (ER) at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecutre. The black line indicates a Generalized Additive Model fit to the data, and the shaded region is the 95\\% confidence interval."
 RP_plot
 ```
 
@@ -1125,7 +1125,7 @@ CAP = "The mean monthly nitrite-nitrate (top) and phosphate (bottom) concentrati
 nutrient_plot
 ```
 
-# Tables
+# 表
 
 ```{r temperature-table, results = "asis"}
 CAP = "Monthly water temperatures at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecture."
@@ -1144,7 +1144,7 @@ cat("\n\\clearpage\n")
 ```
 
 ```{r light-table, results = "asis"}
-CAP = "Light"
+CAP = "Monthly daily underwater photosynthetic photon flux density (PPFD) at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecture."
 CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
 light2 %>% 
   kable(format = "latex",
@@ -1160,7 +1160,7 @@ cat("\n\\clearpage\n")
 ```
 
 ```{r NEP-table, results = "asis"}
-CAP = "NEP"
+CAP = "Monthly net ecosystem production rate (NEP) at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecture."
 CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
 NEP2 %>% 
   kable(format = "latex",
@@ -1176,7 +1176,7 @@ cat("\n\\clearpage\n")
 ```
 
 ```{r RP-table, results = "asis"}
-CAP = "RP"
+CAP = "Monthly ecosystem respiration (ER) at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecture."
 CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
 RP2 %>% 
   kable(format = "latex",
