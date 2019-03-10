@@ -9,3 +9,7 @@
 *.xls
 *.rda
 *.rds
+*.log
+*.pdf
+*.tex
+*.docx
