@@ -62,6 +62,12 @@ library(knitr)
 library(kableExtra)
 library(stringr)
 library(glue)
+library(maptools)
+library(raster)
+library(mapproj)
+library(maps)
+library(grid)
+library(celestial)
 #マイ関数------------------------------
 my_date_format = function() {
   # 年・月の軸のフォーマットを定義
@@ -136,6 +142,156 @@ Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌
 # 方法
 
 ## 調査地
+```{r}
+createScaleBar <- function(lon,lat,distanceLon,distanceLat,distanceLegend, dist.units = "km"){
+  bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon, dist.units = dist.units, model = "WGS84")
+  
+topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.units, model = "WGS84")
+rectangle <- cbind(lon=c(lon, lon, bottomRight[1,"long"], bottomRight[1,"long"], lon),
+                     lat = c(lat, topLeft[1,"lat"], topLeft[1,"lat"],lat, lat))
+rectangle <- data.frame(rectangle, stringsAsFactors = FALSE)
+  
+# Second rectangle t right of the first rectangle
+bottomRight2 <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.units, model = "WGS84")
+rectangle2 <- cbind(lon = c(bottomRight[1,"long"], bottomRight[1,"long"], bottomRight2[1,"long"], bottomRight2[1,"long"], bottomRight[1,"long"]),
+                      lat=c(lat, topLeft[1,"lat"], topLeft[1,"lat"], lat, lat))
+rectangle2 <- data.frame(rectangle2, stringsAsFactors = FALSE)
+  
+# Now let's deal with the text
+onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLegend, dist.units = dist.units, model = "WGS84")
+onTop2 <- onTop3 <- onTop
+onTop2[1,"long"] <- bottomRight[1,"long"]
+onTop3[1,"long"] <- bottomRight2[1,"long"]
+  
+legend <- rbind(onTop, onTop2, onTop3)
+legend <- data.frame(cbind(legend, text = c(0, distanceLon, distanceLon*2)), stringsAsFactors = FALSE, row.names = NULL)
+return(list(rectangle = rectangle, rectangle2 = rectangle2, legend = legend))
+}
+
+createOrientationArrow <- function(scaleBar, length, distance = 1, dist.units = "km"){
+  lon <- scaleBar$rectangle2[1,1]
+  lat <- scaleBar$rectangle2[1,2]
+  
+  # Bottom point of the arrow
+  begPoint <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distance, dist.units = dist.units, model = "WGS84")
+  lon <- begPoint[1,"long"]
+  lat <- begPoint[1,"lat"]
+  
+  # Let us create the endpoint
+  onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = length, dist.units = dist.units, model = "WGS84")
+  
+  leftArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 225, dist = length/5, dist.units = dist.units, model = "WGS84")
+  
+  rightArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 135, dist = length/5, dist.units = dist.units, model = "WGS84")
+  
+  res <- rbind(
+    cbind(x = lon, y = lat, xend = onTop[1,"long"], yend = onTop[1,"lat"]),
+    cbind(x = leftArrow[1,"long"], y = leftArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]),
+    cbind(x = rightArrow[1,"long"], y = rightArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]))
+  
+  res <- as.data.frame(res, stringsAsFactors = FALSE)
+  
+  # Coordinates from which "N" will be plotted
+  coordsN <- cbind(x = lon, y = (lat + onTop[1,"lat"])/2)
+  
+  return(list(res = res, coordsN = coordsN))
+}
+
+res <- c()
+scaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.unit = "km", rec.fill = "white", rec.colour = "black", rec2.fill = "black", rec2.colour = "black", legend.colour = "black", legend.size = 3, orientation = TRUE, arrow.length = 500, arrow.distance = 300, arrow.North.size = 6, arrow.color = "black", box = TRUE, box.line.color = "black", box.fill.color = "white", box.offset = 1){
+  if (box){# Add a background box for better visualization on top of a base map
+    topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.unit, model = "WGS84")
+    bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.unit, model = "WGS84")
+    
+    boxTopLeft <- gcDestination(lon = topLeft[1,"long"], lat = topLeft[1,"lat"], bearing = 315, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxTopRight <- gcDestination(lon = bottomRight[1,"long"], lat = topLeft[1,"lat"], bearing = 45, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxBottomRight <- gcDestination(lon = bottomRight[1,"long"], lat = bottomRight[1,"lat"], bearing = 135, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxBottomLeft <- gcDestination(lon = topLeft[1,"long"], lat = bottomRight[1,"lat"], bearing = 225, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    bg <- cbind(lon = c(boxTopLeft[1,"long"], boxTopRight[1,"long"], boxBottomRight[1,"long"], boxBottomLeft[1,"long"], boxTopLeft[1,"long"]),
+                lat = c(boxTopLeft[1, "lat"], boxTopRight[1, "lat"], boxBottomRight[1, "lat"], boxBottomLeft[1, "lat"], boxTopLeft[1, "lat"]))
+    bgdf <- data.frame(bg, stringsAsFactors = FALSE)
+    bg <- geom_polygon(data = bgdf, aes(x = lon, y = lat), fill = box.fill.color, colour = box.line.color, size = 0.2)
+    res <- c(res, bg)
+  }
+  
+  laScaleBar <- createScaleBar(lon = lon, lat = lat, distanceLon = distanceLon, distanceLat = distanceLat, distanceLegend = distanceLegend, dist.unit = dist.unit)
+  # First rectangle
+  rectangle1 <- geom_polygon(data = laScaleBar$rectangle, aes(x = lon, y = lat), fill = rec.fill, colour = rec.colour)
+  
+  # Second rectangle
+  rectangle2 <- geom_polygon(data = laScaleBar$rectangle2, aes(x = lon, y = lat), fill = rec2.fill, colour = rec2.colour)
+  
+  # Legend
+  scaleBarLegend <- annotate("text", label = paste(laScaleBar$legend[,"text"], dist.unit, sep=""), x = laScaleBar$legend[,"long"], y = laScaleBar$legend[,"lat"], size = legend.size, colour = legend.colour)
+  
+  res <- c(res, list(rectangle1, rectangle2, scaleBarLegend))
+  
+  if(orientation){# Add an arrow pointing North
+    coordsArrow <- createOrientationArrow(scaleBar = laScaleBar, length = arrow.length, distance = arrow.distance, dist.unit = dist.unit)
+    arrow <- list(geom_segment(data = coordsArrow$res, aes(x = x, y = y, xend = xend, yend = yend), color = arrow.color), annotate("text", label = "N", x = coordsArrow$coordsN[1,"x"], y = coordsArrow$coordsN[1,"y"], size = arrow.North.size, colour = arrow.color))
+    res <- c(res, arrow)
+  }
+  
+  return(res)
+}
+
+#詳しい地図
+# 地図データ
+jp = rgdal::readOGR("JPN_adm1.shp")
+jp = fortify(jp) 
+
+#表示したい範囲の緯度、経度（10進法表記）
+longA = 128.89
+longB = 129.33
+latA = 32.80
+latB = 33.31
+
+#軸の区切り幅
+dist_lat  = 0.2 
+dist_long = 0.2  
+
+#10進法表記から60進法表記への変換
+dms = seq(latA-0.02, latB, by = dist_lat)
+hms = seq(longA, longB, by = dist_long)
+# dms = deg2dms(dms,　type = "cat", sep = "dms")　#データ数は軸の区切り位置とリンクしてる　
+# hms = deg2hms(hms,　type = "cat", sep = "hms")
+
+#ここは変換した緯度経度を見て自力で数値を入れる
+dms[1] = expression("32.78"*degree)
+dms[2] = expression("32.98"*degree)
+dms[3] = expression("33.18"*degree)
+# dms[c(2,4)] = ""  　#表示しない軸ラベル
+
+hms[1] = expression("128.89"*degree)
+hms[2] = expression("129.09"*degree)
+hms[3] = expression("129.29"*degree)
+# hms[c(1,3,5)] = ""　#表示しない軸ラベル
+
+#plotする
+Fontsize = 18
+xlabel = ""
+ylabel = ""
+head(jp)
+kamigoto_map = ggplot() + 
+  geom_polygon(aes(long, lat, group = group),
+               data = jp,
+               fill = "white",
+               colour = "Black") + 
+  coord_map(xlim = c(longA, longB), ylim = c(latA, latB)) +
+  scale_y_continuous(breaks = seq(latA-0.02, latB, by = dist_lat), labels = c(dms))+
+  scale_x_continuous(breaks = seq(longA, longB, by = dist_long), labels = c(hms))+
+  labs(x = xlabel, y = ylabel)+
+  annotate("text", x = 129.199219, y = 32.838058, label = "Nakadori Island", size = 7)+
+  annotate("point", x = 129.110298, y = 32.951640, color = "red", size = 4)+
+  annotate("point", x = 129.118195, y = 32.987644, color = "red", size = 4)+
+  theme_bw(Fontsize)+
+  theme(
+    axis.text.y = element_text(angle = 35),
+    axis.text.x = element_text(angle = 35, vjust = 1, hjust = 1),
+    panel.border = element_rect(color = "black", fill = NA),
+    panel.background = element_rect(fill = "grey90")
+  )
+```
 
 本調査は，長崎県五島列島の中通島に位置する新上五島町有川地先と鯛ノ浦湾 (図)にて行った。
 有川地先では褐藻類によってガラモ場が形成されていた。
@@ -149,6 +305,9 @@ Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌
 光量子量は，LI-190 ( Quantum Sensor, Li-Cor, Inc.) を基準とし補正値を算出し，補正を行った。
 
 ## 観測方法
+```{r}
+
+```
 
 海底から 0 m と 1 m 観測帯で溶存酸素濃度，水温を，海底から 0.5 m 観測帯で光量子量の観測を行った（図）。
 溶存酸素ロガーは，ロープの両端にアンカーとブイをくくり付け，中層ブイの浮力によって藻場内に張ったロープに，それぞれの観測帯にセンサーが来るようにカラビナ，結束バンド，ビニールテープを用いて 1 本ずつ取り付け，それぞれの藻場に設置した。
@@ -274,7 +433,7 @@ temperature2 =
 ```
 
 水温は 1 日ごとに平均水温を算出した。
-有川地先の平均水温は 1 月に最小値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 1) %>% pull(mean) %>% round(digits = 1)` °C を記録し，7 月にかけて上昇し，最大値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` °C を記録した。
+有川地先の平均水温は 2 月に最小値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 2) %>% pull(mean) %>% round(digits = 1)` °C を記録し，7 月にかけて上昇し，最大値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` °C を記録した。
 また， 8 月から 12 月にかけて減少した。
 鯛ノ浦湾は 2 月に最小値 `r temperature2 %>% filter(str_detect(location, "Tain"), month == 2) %>% pull(mean) %>% round(digits = 1)` °Cを記録し，8 月にかけて上昇し最大値 `r temperature2 %>% filter(str_detect(location, "Tain"), month == 8) %>% pull(mean) %>% round(digits = 1)` °Cを記録した。
 8 月から 12 月にかけて減少した（表\@ref(tab:temperature-table); 図\@ref(fig:temperature-plot)）。
@@ -283,21 +442,172 @@ temperature2 =
 
 ## 光量子量
 
+```{r}
+light = read_csv("../Modified_data/light_calibrate.csv")
+
+light = light %>% 
+  group_by(location, Date) %>% 
+  mutate(ppfd = ifelse(ppfd < 0, 0, ppfd)) %>% 
+  summarise(ppfd = sum(ppfd*60) * 10e-6) %>% 
+  mutate(month = month(Date)) 
+
+ light = 
+  light %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3,
+                           "mushima2" = 4,
+                           "mushima3" = 5)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3,4,5),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa",
+                                     "Mushima (Old port)" ,
+                                     "Mushima (New port)" ))) 
+
+
+dset_daily =light %>%  
+  filter(!str_detect(location, "Zostera|Mushima")) 
+
+light_plot = 
+  dset_daily %>% 
+  mutate(month = month(Date)) %>% 
+  ggplot()+
+  geom_boxplot(aes(x = month,
+                   y = ppfd,
+                   color = location,
+                   fill = location,
+                   group =  month),
+               alpha = 0.5,
+               size = rel(0.4)) +
+  geom_smooth(aes(x= month, y = ppfd,
+                  linetype = "GAM"),
+              method = "gam",
+              method.args = list(family = Gamma(link = "log")),
+              fill = "black",
+              color = "black",
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(name = ylabel) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_kawate(16) +
+  facet_wrap("location", nrow = 1)
+
+light2 =
+  dset_daily %>% 
+  group_by(location, month) %>% 
+  summarise_at(vars(ppfd), funs(mean, sd, min, max)) %>% 
+  arrange(location, month)
+
+```
+
+
 光量子量データは，1 日ごとに積算し，縦軸は 1 日あたりの積算光量子量で示した。
-両地点とも，1 月から 4 月にかけて上昇し，7 月から 12 月にかけて減少する傾向が見られた(図)。
+両地点とも，1 月から 4 月にかけて上昇し，7 月から 12 月にかけて減少する傾向が見られた（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
 また，4 月と 7 月に高くることを観測した。
-有川地先の平均日積算光量子量は，4 月に 16.7 mol day~-1~ ，7 月に 18.3 mol day~-1~ となり，12 月に最小値 2.21 mol day~-1~ を記録した。
-鯛ノ浦湾の平均日積算光量子量は，4 月に 7.79 mol day~-1~ ，7 月に 6.20 mol day~-1~ となり，2 月に最小値 1.10 mol day~-1~ を記録した。
+有川地先の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day~-1~  ，7 月に `r light2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` mol day~-1~  となり，12 月に最小値 `r light2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ を記録した。
+鯛ノ浦湾の平均日積算光量子量は，4 月に `r light2 %>% filter(str_detect(location, "Tainoura"), month == 4) %>% pull(mean) %>% round(digits = 1)` mol day~-1~  ，7 月に `r temperature2 %>% filter(str_detect(location, "Tainoura"), month == 7) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ となり，2 月に最小値 `r light2 %>% filter(str_detect(location, "Tainoura"), month == 2) %>% pull(mean) %>% round(digits = 1)`  mol day~-1~ を記録した。
 1 年間を通して，有川地先の方が鯛ノ浦湾より，光量子量が高くなった。
 
 ## 生態系純一次生産量 (NEP)
+```{r}
+df1 = read_csv("../Modified_data/kamigoto_production.csv")
+light = read_csv("../Modified_data/light_calibrate.csv")
+df1 = 
+  df1 %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "Tainoura (Isoyake)" = 1, 
+                           "Arikawa (Zostera)" = 2,
+                           "Arikawa (Sargassum)" = 3)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa"))) 
 
-有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 20.5 mg O~2~m~-2~ day~-1~ を記録した。
-6 月， 7 月にかけて減少したが，8 月に上昇し，15.0 mg O~2~ m~-2~ day~-1~ を記録した。
-その後，12 月にかけて減少し，最小値 4.09 mg O~2~ m~-2~ day~-1~ を記録した。
-鯛ノ浦湾は 1 月に最小値 4.04 mg O~2~ m~-2~ day~-1~ を記録した後，4 月にかけて上昇し最大値 10.6 mg O~2~ m~-2~ day~-1~ を記録した。
-6 月， 7 月にかけて減少したが，8 月に上昇し，7.22 mg O~2~m~-2~ day~-1~ を記録した。
-その後，12 月にかけて減少した(図)。
+df1 = df1 %>% filter(!str_detect(location, "Zostera")) 
+df1 = df1 %>% mutate(location = factor(location)) # 外した要因のレベルも外す
+
+df1 = df1 %>% spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
+
+light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^6) %>% 
+  ungroup() %>% 
+  filter(str_detect(location, "tainoura|arikawa")) %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa"))) 
+
+df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
+                  select(Date, location, value),
+                light, by = c("Date", "location") ) %>% 
+  filter(str_detect(location, "Tainoura|Sarg"))
+
+#NEP-----------------------------------------------
+xlabel = ""
+ylabel = expression("NEP"~(g~O[2]~m^{-2}~day^{-1}))
+gtitle = ""
+
+dset03 = 
+  df1  %>% 
+  filter(str_detect("NEP", key))
+
+NEP_plot = 
+dset03 %>% 
+  ggplot(aes(x = month,
+             y = value, 
+             color = location,
+             fill = location)) +
+  geom_boxplot(aes(group = month), 
+               alpha = 0.5,
+               size = rel(0.2)) +
+  geom_smooth(aes(linetype = "GAM"),
+              color = "black", fill = "black",
+              method = "gam", 
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x, bs = "cc"))  + 
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(ylabel) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  # facet_rep_wrap("location", nrow = 1)+
+  facet_wrap("location", nrow = 1)+
+  theme_kawate(base_size = 16) 
+
+NEP2 =
+  dset03 %>% 
+  group_by(location, month) %>% 
+  drop_na() %>% 
+  summarise_at(vars(value), funs(mean, sd, min, max)) %>% 
+  arrange(location, month)
+```
+
+有川地先の平均 NEP は 1 月から 4 月にかけて上昇し，最大値 `r NEP2 %>% filter(str_detect(location, "Arik"), month == 4) %>% pull(mean) %>% round(digits = 1)` mg O~2~m~-2~ day~-1~ を記録した。
+6 月， 7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Arik"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
+その後，12 月にかけて減少し，最小値  `r NEP2 %>% filter(str_detect(location, "Arik"), month == 12) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
+鯛ノ浦湾は 1 月に最小値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 1) %>% pull(mean) %>% round(digits = 1)`mg O~2~ m~-2~ day~-1~ を記録した後，5 月にかけて上昇し最大値  `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 5) %>% pull(mean) %>% round(digits = 1)` mg O~2~ m~-2~ day~-1~ を記録した。
+6 月，7 月にかけて減少したが，8 月に上昇し， `r NEP2 %>% filter(str_detect(location, "Tainoura"), month == 8) %>% pull(mean) %>% round(digits = 1)` mg O~2~m~-2~ day~-1~ を記録した。
+その後，12 月にかけて減少した（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 
 両藻場とも，生産量が 1 年を通して正の値となった。
 また，鯛ノ浦湾は，有川地先に比べて NEP の季節変動を緩やかであった。
@@ -306,7 +616,7 @@ temperature2 =
 
 ## 2 地点における NEP の季節変動
 
-1 年を通して，有川地先の方が鯛ノ浦湾に比べて NEP が高くなった（図）。
+1 年を通して，有川地先の方が鯛ノ浦湾に比べて NEP が高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)））。
 これは，光量子量が 1 年を通して，有川地先の方が高かった（図）ためであると考えられる。
 一般的に光量子量が高くなることで，海藻の NEP が高くなることが知られている ( 村瀬 2001 ; Terada *et al*. 2013 ) 。
 そのため，光量子量が高い有川地先では，鯛ノ浦湾に比べて光合成が活発であったと考えられる。
@@ -318,46 +628,376 @@ temperature2 =
 これは，陸上生態系における，バイオマスが小さい灌木地の NEP の季節変動が，バイオマスが大きい落葉広葉樹林に比べて緩やかであること ( Xiao *et al*. 2008 ) と傾向が一致した。
 
 ## 4, 8 月の NEP
+```{r}
+# RP の引用のため、作図
+df1 = read_csv("../Modified_data/kamigoto_production.csv")
+light = read_csv("../Modified_data/light_calibrate.csv")
+df1 = 
+  df1 %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "Tainoura (Isoyake)" = 1, 
+                           "Arikawa (Zostera)" = 2,
+                           "Arikawa (Sargassum)" = 3)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa"))) 
 
-両地点において， NEP は 4 月と 8 月に高くなった（図）。
+df1 = df1 %>% filter(!str_detect(location, "Zostera")) 
+df1 = df1 %>% mutate(location = factor(location)) # 外した要因のレベルも外す
+
+df1 = df1 %>% spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
+
+light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^6) %>% 
+  ungroup() %>% 
+  filter(str_detect(location, "tainoura|arikawa")) %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2,3),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa"))) 
+
+df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
+                  select(Date, location, value),
+                light, by = c("Date", "location") ) %>% 
+  filter(str_detect(location, "Tainoura|Sarg"))
+
+xlabel = ""
+ylabel = expression("ER"~(g~O[2]~m^{-2}~day^{-1}))
+gtitle = "Respiration Production"
+
+dset02 = 
+  df1  %>% 
+  filter(str_detect("RP", key)) %>% 
+  # spread(position, value) %>% 
+  mutate(value = `1m`+`0m`)
+
+RP_plot = 
+dset02 %>% 
+  ggplot(aes(x = month,
+             y = value, 
+             color = location,
+             fill = location)) +
+  geom_boxplot(aes(group = month), 
+               alpha = 0.5,
+               size = rel(0.2)) +
+  geom_smooth(aes(linetype = "GAM"),
+              color = "black", fill = "black",
+              method = "gam", 
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x, bs = "cc"))  + 
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(ylabel) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  # facet_rep_wrap("location", nrow = 1)+
+  facet_wrap("location", nrow = 1)+
+  theme_kawate(base_size = 16) 
+
+RP2 =
+  dset02 %>% 
+  group_by(location, month) %>% 
+  drop_na() %>% 
+  summarise_at(vars(value), funs(mean, sd, min, max)) %>% 
+  arrange(location, month)
+```
+
+両地点において， NEP は 4 月と 8 月に高くなった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 4 月に NEP が高くなった要因は高い光量子量と水温が 20 ℃ であったことが関係していると考えられる。
 土屋ら ( 2012 ) は，褐藻に属するホンダワラ類の純一次生産量 ( Net Primary Production ; NPP ) が水温 20 ℃ のとき，高くなることを明らかにしている。
 このことからも，4 月に NEP が高くなる要因として，水温が関係していると考えられた。
 また， 8 月に NEP が高くなる要因は高い光量子量と高い水温であると考えられる。
 8 月の NEP は 4 月に比べて低い値を示した。
 この原因は，水温上昇による ER の上昇であると考えられた。
-しかし，本研究で記録した ER は 8 月よりも 4 月の方が高くなった（図）。
+しかし，本研究で記録した ER は 8 月よりも 4 月の方が高くなった（表\@ref(tab:RP-table); 図\@ref(fig:RP-plot)）。
 このことから， ER の上昇が原因とは言えなかった。
 土屋ら ( 2012 ) は，水温が上昇することで， NPP が減少することを明らかにした。
 このことから， 8 月の NEP は，水温が上昇したことで，抑えられたのだと考えられる。
 
 ## 6, 7 月の NEP
 
-両地点において， 6 月と 7 月に NEP が低くなることが記録された（図）。
-本研究で得られた光量子量データによると，6 月の光量子量は 4 月や 8 月に比べて低くなった（図）。
+```{r}
+#　流速（引用のため作図）
+#エクセルファイルの時間データ処理用
+fix_xlsx_date = function(x) {
+  as.character(glue("{sprintf('%02d', day(x))}/{sprintf('%02d', month(x))}/{year(x)}"))
+}
+fix_xlsx_time = function(x) {
+  as.character(glue("{sprintf('%02d', hour(x))}:{sprintf('%02d', minute(x))}:{sprintf('%02d', second(x))}"))
+}
+
+fnames = dir("~/Lab_Data/kawatea/CEM/", full = TRUE)
+
+#CEM-------------------------------------------------------------
+#読み込み
+col_type = "nccnnnnnnnnnnnnnnnnn_"
+cem_file = tibble(file = fnames)
+cem = cem_file %>% 
+  mutate(cem = map(file, read_csv, skip = 36, 
+                   locale = locale(encoding = "CP932"),
+                   col_type = col_type))
+
+cem =
+  cem %>% 
+  mutate(file = basename(file)) %>% 
+  separate(file, c("x", "y", "location", "position", "z")) %>% 
+  unnest() %>% 
+  mutate(datetime = ymd_hms(paste(`YYYY/MM/DD`, `hh:mm:ss`))) %>% 
+  select(location, datetime,
+         speed = starts_with("Velo["),
+         velX = starts_with("Vel X["),
+         velY = starts_with("Vel Y["),
+         temperature = starts_with("Temp[")) %>% 
+  filter(between(velX, -250, 250)) %>% 
+  filter(between(velY, -250, 250))
+
+
+kikan = read_xlsx("~/Lab_Data/kawatea/調査機関.xlsx")
+kikan = kikan %>% filter(str_detect(location, "garamo|tainoura")) 
+kikan = kikan %>% mutate(start_date = start_date + days(2))    
+
+cem = full_join(kikan %>% unnest() %>% group_by(location) %>% nest(),
+                cem %>% group_by(location) %>% nest(),
+                by = "location")
+
+# 期間範囲毎のフィルター (data.table パッケージのinrange()を使う)
+cem = 
+  cem %>% 
+  mutate(data = map2(data.x, data.y, function(X, Y) {
+    Y %>% filter(data.table::inrange(datetime, X$start_date, X$end_date)) %>% 
+      mutate(H = hour(datetime) + minute(datetime) / 60) %>% 
+      mutate(Date = as.Date(datetime))
+  }))
+
+
+cem = 
+  cem %>% unnest(data) %>% 
+  mutate(datetime2 = floor_date(datetime, unit = "minutes")) %>% 
+  group_by(location, datetime2) %>% 
+  summarise(mean_speed = mean(speed),
+            sd_speed = sd(speed))
+
+cem = cem %>% rename(datetime = datetime2)
+cem = cem %>% mutate(Date = as.Date(datetime))
+
+#おかしなデータ削除
+cem = cem %>% filter(!(Date == as.Date("2017-11-18") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2017-10-31") & str_detect(location, "tainoura")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-19") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-20") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-21") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-05") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-16") & str_detect(location, "arikawagaramo")))
+cem = cem %>% filter(!(Date == as.Date("2018-03-17") & str_detect(location, "arikawagaramo")))
+
+#月ごとにグループ化できるようにする
+cem = cem %>% 
+  mutate(month = month(Date))
+
+cem = 
+  cem %>% 
+  ungroup() %>% 
+  mutate(location = recode(location,
+                           "tainoura" = 1, 
+                           "arikawagaramo" = 2)) %>% 
+  mutate(location = factor(location, 
+                           levels = c(1,2),
+                           label = c("Tainoura",
+                                     "Arikawa")))
+
+
+#作図
+xlabel = ""
+ylabel = expression("Velocity"~(cm~sec^{-1}))
+gtitle = ""
+
+cem_plot = 
+cem %>% 
+  group_by(location,month) %>% 
+  drop_na() %>% 
+  summarise(speed_mean = mean(mean_speed),
+            sd_speed = sd(mean_speed),
+            n = sum(!is.na(mean_speed))) %>% 
+  mutate(l95 = speed_mean - sd_speed / sqrt(n -1),
+         u95 = speed_mean + sd_speed / sqrt(n -1)) %>%
+  ggplot(aes(x = month, y = speed_mean, color = location))+
+  geom_point(position=position_dodge(0.1)) +
+  geom_line( position=position_dodge(0.1)) +
+  geom_errorbar(aes(ymin = l95, ymax = u95), width = 0,
+                position = position_dodge(0.1)) +
+  scale_x_continuous(name = xlabel,
+                     labels = month_labels(),
+                     breaks = 1:12,
+                     limits = c(1,12)) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(0, 8),
+                     breaks = c(0, 2, 4, 6, 8)) +
+  scale_color_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+    theme_kawate(base_size = 16) 
+
+cem2 =
+  cem %>% 
+  group_by(location, month) %>% 
+  drop_na() %>% 
+  summarise_at(vars(mean_speed), funs(mean, sd, min, max)) %>% 
+  arrange(location, month)
+
+```
+
+```{r}
+nutrient2017 = tibble(fname = dir("~/Lab_Data/nutrient/2017Data/", full = TRUE))
+nutrient2018 = tibble(fname = dir("~/Lab_Data/nutrient/2018Data/", full = TRUE))
+
+nutrient2017 = nutrient2017 %>% mutate(data = map(fname, read_csv))
+nutrient2018 = nutrient2018 %>% mutate(data = map(fname, read_csv))
+
+nutrient2017 =
+  nutrient2017 %>%
+  mutate(data = map(data, function(X) {
+    X %>%
+      mutate(location = recode(location,
+                               `有川湾 (ガラモ場)` = "Arikawa.Sargassum",
+                               `有川湾 (アマモ場)` = "Arikawa.Zostera",
+                               `鯛ノ浦湾` = "Tainoura.Isoyake",
+                               `六島旧港` = "Mushima.St2",
+                               `六島新港` = "Mushima.St3",
+                               `焼崎` = "Yakizaki.Isoyake")) %>%
+      mutate(sampling_depth = recode(position,
+                                     `低層` = "Bottom",
+                                     `表層` = "Surface",
+                                     `中層` = "Middle")) %>%
+      mutate(Nutrient = recode(parameter,
+                               `NO[2]` = "NO2",
+                               `NO[3]` = "NO3",
+                               `PO[4]` = "PO4",
+                               `NH[4]` = "NH4")) %>%
+      select(date, location, sampling_depth, Nutrient, conc = mumol_mean) %>%
+      separate(location, into = c("station", "variable")) %>%
+      filter(!str_detect(Nutrient, "Si*"))
+  })) %>% unnest(data) %>% select(-fname)
+
+nutrient2017 =
+  nutrient2017 %>%
+  group_by(Nutrient, station, variable, sampling_depth) %>%
+  nest() %>%
+  spread(Nutrient, data) %>%
+  mutate(NO2_NO3 = map2(NO2, NO3, function(X, Y) {
+    x = X %>% pull(conc)
+    y = Y %>% pull(conc)
+    z = X %>% pull(date)
+    tibble(date = z, conc = x + y)
+  })) %>%
+  select(-NO2, -NO3) %>%
+  gather(Nutrient, data, -(station:sampling_depth)) %>%
+  unnest(data) 
+
+nutrient2018 =
+  nutrient2018 %>%
+  mutate(n = 1:3) %>%
+  mutate(data = map2(data, n, function(X, Y) {
+    if(Y == 1) {
+      X
+    } else {
+      X %>% select(ID:Nutrient, conc = conc_base_gain_carry_value)
+    }
+  })) %>%
+  unnest() %>%
+  select(date, station, variable, sampling_depth, Nutrient, conc)
+
+nutrient =
+  bind_rows(nutrient2017, nutrient2018) %>%
+  filter(str_detect(sampling_depth, "Bottom|Middle|Surface$")) %>%
+  filter(str_detect(Nutrient, "PO4|NO2_NO3"))
+
+# 月々の平均 ----
+xlabel = ""
+ylabel = expression("Mean concentration"~(mu*mol~L^{-1}))
+gtitle = ""
+
+nutrient_plot = 
+nutrient %>%
+  mutate(conc = ifelse(conc < 0, 0, conc),
+         month = month(date)) %>%
+  group_by(station, month, Nutrient) %>%
+  summarise(conc_mean = mean(conc, na.rm=T),
+            conc_sd = sd(conc, na.rm = T),
+            n = sum(!is.na(conc))) %>%
+  ungroup() %>%
+  mutate(month_offset = factor(month, levels = c(7:12, 1:6),
+                        labels = month.abb[c(7:12, 1:6)])) %>%
+  mutate(l95 = conc_mean - conc_sd / sqrt(n -1),
+         u95 = conc_mean + conc_sd / sqrt(n -1)) %>%
+  filter(str_detect(station, "Arikawa|Tainoura")) %>%
+  mutate(Nutrient = recode(Nutrient,
+                           NO2_NO3 = 'NO[x]-N',
+                           PO4 = 'PO[4]-P')) %>%
+  ggplot(aes(x = (month),
+             y = conc_mean,
+             color = station)) +
+  geom_point(position=position_dodge(0.1)) +
+  geom_line( position=position_dodge(0.1)) +
+  geom_errorbar(aes(ymin = l95, ymax = u95), width = 0,
+                position = position_dodge(0.1)) +
+  scale_x_continuous(name = xlabel,
+                     breaks = 1:12,
+                     labels = month.abb[1:12]) +
+  scale_y_continuous(name = ylabel) +
+  scale_color_brewer(name = "", palette = "Dark2") +
+  ggtitle(gtitle) +
+  facet_rep_wrap("Nutrient",
+                 repeat.tick.labels = TRUE,
+                 scales = "free_y",
+                 ncol = 1, labeller = label_parsed) +
+  theme_kawate(base_size = 16) +
+  theme(legend.position = c(0.5,1),
+        legend.justification = c(0.5,1))
+
+nutrient2 =
+  nutrient %>% 
+  mutate(conc = ifelse(conc < 0, 0, conc),
+         month = month(date)) %>% 
+  group_by(station, month, Nutrient) %>% 
+  drop_na() %>% 
+  summarise_at(vars(conc), funs(mean, sd, min, max)) %>% 
+  arrange(station, Nutrient, month)
+```
+両地点において， 6 月と 7 月に NEP が低くなることが記録された（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
+本研究で得られた光量子量データによると，6 月の光量子量は 4 月や 8 月に比べて低くなった（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
 光量子量が低いと，光合成速度は低下することがわかっている（ 村瀬 2001 ; Terada *et al*. 2013 ）ため， 6 月は光合成が抑制され， NEP が低下したと考えられる。
-しかし， 7 月は，光量子量が 2 地点において高くなっていた（図）。
+しかし， 7 月は，光量子量が 2 地点において高くなっていた（表\@ref(tab:light-table); 図\@ref(fig:light-plot)）。
 このため，光量子量が原因ではないと考えられる。
 その他にも，河川からの流入による撹拌や栄養塩の季節変動などが考えられた。
 河川について，有川地先は，流れ込んでくる河川は存在しないため，影響はないと断言できる。
 一方，鯛ノ浦には， 3 本の川が流れ込んでいる。
-しかし，この川の河口域と観測地点は離れているうえ，観測地点における流速は1年を通して大きな変動はないため（図），影響は少ないと考えられる。
+しかし，この川の河口域と観測地点は離れているうえ，観測地点における流速は1年を通して大きな変動はないため（図\@ref(fig:cem-plot)），影響は少ないと考えられる。
 栄養塩に関しては，所属している研究室にて月に 1 回データを取っている。
-栄養塩濃度は， 1 月と 12 月に高くなり，その他の期間は横ばいになる(図)。
+栄養塩濃度は， 1 月と 12 月に高くなり，その他の期間は横ばいになる（ 図\@ref(fig:nutrient-plot)）。
 NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃度に差は見られなかった。
 このため，栄養塩濃度は NEP が低くなる要因とは言えない。
 以上のことから， 7 月に NEP が低くなる要因は現時点では説明できなかった。
 
 ## 鯛ノ浦における NEP について
 
-磯焼け生態系である鯛ノ浦にて， NEP が負の値をとることはなかった。
+磯焼け生態系である鯛ノ浦にて， NEP が負の値をとることはなかった（表\@ref(tab:NEP-table); 図\@ref(fig:NEP-plot)）。
 海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる( Fieled 1998 )。
 そのため，鯛ノ浦湾におけるNEPを底上げしたと考えられる。
 しかし，本研究の中では，海藻類による NEP とプランクトンによる NEP を分けることはできない。
 そのため，植物プランクトンによる NEP の推定はできない。
 今後，プランクトンによる生産量を推定することは，磯焼け生態系における NEP の変動を理解するうえで重要なことである。
 
-## まとめ
+# まとめ
 
 本研究では，異なる状態の沿岸生態系において，開放系溶存酸素法を用いて NEP の観測を行った。
 その結果，沿岸域において，生態系が異なることで， NEP の季節変動に違いが生まれることが明らかとなった。
@@ -437,11 +1077,40 @@ agricultural and forest meteorology. 148:1827-1847.
 
 # Figures
 
+```{r kamigoto-map, fig.cap = CAP}
+CAP = "kamigoto_map"
+kamigoto_map
+```
+
 ```{r temperature-plot, fig.cap = CAP}
 CAP = "Temperature"
 temperature_plot
 ```
 
+```{r light-plot, fig.cap = CAP}
+CAP = "Light"
+light_plot
+```
+
+```{r NEP-plot, fig.cap = CAP}
+CAP = "NEP"
+NEP_plot
+```
+
+```{r RP-plot, fig.cap = CAP}
+CAP = "RP"
+RP_plot
+```
+
+```{r cem-plot, fig.cap = CAP}
+CAP = "cem"
+cem_plot
+```
+
+```{r nutrient-plot, fig.cap = CAP}
+CAP = "nutrient"
+nutrient_plot
+```
 
 # Tables
 
@@ -461,7 +1130,82 @@ temperature2 %>%
 cat("\n\\clearpage\n")
 ```
 
+```{r light-table, results = "asis"}
+CAP = "Light"
+CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
+light2 %>% 
+  kable(format = "latex",
+        booktabs = TRUE,
+        linesep = "",
+        caption = CAP,
+        col.names = CNAMES,
+        digits = c(0, 0, 1,1,1,1)) %>% 
+  kable_styling(latex_options = "HOLD_position", 
+                font_size = 10)
 
+cat("\n\\clearpage\n")
+```
 
+```{r NEP-table, results = "asis"}
+CAP = "NEP"
+CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
+NEP2 %>% 
+  kable(format = "latex",
+        booktabs = TRUE,
+        linesep = "",
+        caption = CAP,
+        col.names = CNAMES,
+        digits = c(0, 0, 1,1,1,1)) %>% 
+  kable_styling(latex_options = "HOLD_position", 
+                font_size = 10)
 
+cat("\n\\clearpage\n")
+```
 
+```{r RP-table, results = "asis"}
+CAP = "RP"
+CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
+RP2 %>% 
+  kable(format = "latex",
+        booktabs = TRUE,
+        linesep = "",
+        caption = CAP,
+        col.names = CNAMES,
+        digits = c(0, 0, 1,1,1,1)) %>% 
+  kable_styling(latex_options = "HOLD_position", 
+                font_size = 10)
+
+cat("\n\\clearpage\n")
+```
+
+```{r cem-table, results = "asis"}
+# CAP = "cem"
+# CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
+# cem2 %>% 
+#   kable(format = "latex",
+#         booktabs = TRUE,
+#         linesep = "",
+#         caption = CAP,
+#         col.names = CNAMES,
+#         digits = c(0, 0, 1,1,1,1)) %>% 
+#   kable_styling(latex_options = "HOLD_position", 
+#                 font_size = 10)
+# 
+# cat("\n\\clearpage\n")
+```
+
+```{r nutrient-table, results = "asis"}
+# CAP = "nutrient"
+# CNAMES = c("Location", "Month","Nutrient","Mean", "Std. Dev.", "Min.", "Max.")
+# nutrient2 %>% 
+#   kable(format = "latex",
+#         booktabs = TRUE,
+#         linesep = "",
+#         caption = CAP,
+#         col.names = CNAMES,
+#         digits = c(0, 0, 0,1,1,1,1)) %>% 
+#   kable_styling(latex_options = "HOLD_position", 
+#                 font_size = 10)
+# 
+# cat("\n\\clearpage\n")
+```
