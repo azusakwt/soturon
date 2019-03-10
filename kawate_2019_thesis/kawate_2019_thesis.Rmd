@@ -38,7 +38,7 @@ CJKsansfont: "Noto Sans CJK JP"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache = FALSE,
+knitr::opts_chunk$set(cache = TRUE,
                       echo = FALSE,
                       fig.width =  2*80/25.4,
                       fig.height = 2*80/25.4,
@@ -54,7 +54,7 @@ options(kableExtra.latex.load_packages = FALSE, tidyverse.quiet = TRUE)
 Sys.setlocale("LC_TIME", "en_US.UTF-8") # アメリカ英語に設定
 ```
 
-```{r}
+```{r, cache = FALSE}
 library(tidyverse)
 library(lubridate)
 library(readxl)
@@ -62,12 +62,8 @@ library(knitr)
 library(kableExtra)
 library(stringr)
 library(glue)
-library(maptools)
-library(raster)
-library(mapproj)
-library(maps)
 library(grid)
-library(celestial)
+library(lemon)
 #マイ関数------------------------------
 my_date_format = function() {
   # 年・月の軸のフォーマットを定義
@@ -142,158 +138,9 @@ Xiao *et al*. ( 2008 ) は，落葉広葉樹林とバイオマスが小さい灌
 # 方法
 
 ## 調査地
-```{r}
-createScaleBar <- function(lon,lat,distanceLon,distanceLat,distanceLegend, dist.units = "km"){
-  bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon, dist.units = dist.units, model = "WGS84")
-  
-topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.units, model = "WGS84")
-rectangle <- cbind(lon=c(lon, lon, bottomRight[1,"long"], bottomRight[1,"long"], lon),
-                     lat = c(lat, topLeft[1,"lat"], topLeft[1,"lat"],lat, lat))
-rectangle <- data.frame(rectangle, stringsAsFactors = FALSE)
-  
-# Second rectangle t right of the first rectangle
-bottomRight2 <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.units, model = "WGS84")
-rectangle2 <- cbind(lon = c(bottomRight[1,"long"], bottomRight[1,"long"], bottomRight2[1,"long"], bottomRight2[1,"long"], bottomRight[1,"long"]),
-                      lat=c(lat, topLeft[1,"lat"], topLeft[1,"lat"], lat, lat))
-rectangle2 <- data.frame(rectangle2, stringsAsFactors = FALSE)
-  
-# Now let's deal with the text
-onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLegend, dist.units = dist.units, model = "WGS84")
-onTop2 <- onTop3 <- onTop
-onTop2[1,"long"] <- bottomRight[1,"long"]
-onTop3[1,"long"] <- bottomRight2[1,"long"]
-  
-legend <- rbind(onTop, onTop2, onTop3)
-legend <- data.frame(cbind(legend, text = c(0, distanceLon, distanceLon*2)), stringsAsFactors = FALSE, row.names = NULL)
-return(list(rectangle = rectangle, rectangle2 = rectangle2, legend = legend))
-}
 
-createOrientationArrow <- function(scaleBar, length, distance = 1, dist.units = "km"){
-  lon <- scaleBar$rectangle2[1,1]
-  lat <- scaleBar$rectangle2[1,2]
-  
-  # Bottom point of the arrow
-  begPoint <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distance, dist.units = dist.units, model = "WGS84")
-  lon <- begPoint[1,"long"]
-  lat <- begPoint[1,"lat"]
-  
-  # Let us create the endpoint
-  onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = length, dist.units = dist.units, model = "WGS84")
-  
-  leftArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 225, dist = length/5, dist.units = dist.units, model = "WGS84")
-  
-  rightArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 135, dist = length/5, dist.units = dist.units, model = "WGS84")
-  
-  res <- rbind(
-    cbind(x = lon, y = lat, xend = onTop[1,"long"], yend = onTop[1,"lat"]),
-    cbind(x = leftArrow[1,"long"], y = leftArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]),
-    cbind(x = rightArrow[1,"long"], y = rightArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]))
-  
-  res <- as.data.frame(res, stringsAsFactors = FALSE)
-  
-  # Coordinates from which "N" will be plotted
-  coordsN <- cbind(x = lon, y = (lat + onTop[1,"lat"])/2)
-  
-  return(list(res = res, coordsN = coordsN))
-}
 
-res <- c()
-scaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.unit = "km", rec.fill = "white", rec.colour = "black", rec2.fill = "black", rec2.colour = "black", legend.colour = "black", legend.size = 3, orientation = TRUE, arrow.length = 500, arrow.distance = 300, arrow.North.size = 6, arrow.color = "black", box = TRUE, box.line.color = "black", box.fill.color = "white", box.offset = 1){
-  if (box){# Add a background box for better visualization on top of a base map
-    topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.unit, model = "WGS84")
-    bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.unit, model = "WGS84")
-    
-    boxTopLeft <- gcDestination(lon = topLeft[1,"long"], lat = topLeft[1,"lat"], bearing = 315, dist = box.offset, dist.units = dist.unit, model = "WGS84")
-    boxTopRight <- gcDestination(lon = bottomRight[1,"long"], lat = topLeft[1,"lat"], bearing = 45, dist = box.offset, dist.units = dist.unit, model = "WGS84")
-    boxBottomRight <- gcDestination(lon = bottomRight[1,"long"], lat = bottomRight[1,"lat"], bearing = 135, dist = box.offset, dist.units = dist.unit, model = "WGS84")
-    boxBottomLeft <- gcDestination(lon = topLeft[1,"long"], lat = bottomRight[1,"lat"], bearing = 225, dist = box.offset, dist.units = dist.unit, model = "WGS84")
-    bg <- cbind(lon = c(boxTopLeft[1,"long"], boxTopRight[1,"long"], boxBottomRight[1,"long"], boxBottomLeft[1,"long"], boxTopLeft[1,"long"]),
-                lat = c(boxTopLeft[1, "lat"], boxTopRight[1, "lat"], boxBottomRight[1, "lat"], boxBottomLeft[1, "lat"], boxTopLeft[1, "lat"]))
-    bgdf <- data.frame(bg, stringsAsFactors = FALSE)
-    bg <- geom_polygon(data = bgdf, aes(x = lon, y = lat), fill = box.fill.color, colour = box.line.color, size = 0.2)
-    res <- c(res, bg)
-  }
-  
-  laScaleBar <- createScaleBar(lon = lon, lat = lat, distanceLon = distanceLon, distanceLat = distanceLat, distanceLegend = distanceLegend, dist.unit = dist.unit)
-  # First rectangle
-  rectangle1 <- geom_polygon(data = laScaleBar$rectangle, aes(x = lon, y = lat), fill = rec.fill, colour = rec.colour)
-  
-  # Second rectangle
-  rectangle2 <- geom_polygon(data = laScaleBar$rectangle2, aes(x = lon, y = lat), fill = rec2.fill, colour = rec2.colour)
-  
-  # Legend
-  scaleBarLegend <- annotate("text", label = paste(laScaleBar$legend[,"text"], dist.unit, sep=""), x = laScaleBar$legend[,"long"], y = laScaleBar$legend[,"lat"], size = legend.size, colour = legend.colour)
-  
-  res <- c(res, list(rectangle1, rectangle2, scaleBarLegend))
-  
-  if(orientation){# Add an arrow pointing North
-    coordsArrow <- createOrientationArrow(scaleBar = laScaleBar, length = arrow.length, distance = arrow.distance, dist.unit = dist.unit)
-    arrow <- list(geom_segment(data = coordsArrow$res, aes(x = x, y = y, xend = xend, yend = yend), color = arrow.color), annotate("text", label = "N", x = coordsArrow$coordsN[1,"x"], y = coordsArrow$coordsN[1,"y"], size = arrow.North.size, colour = arrow.color))
-    res <- c(res, arrow)
-  }
-  
-  return(res)
-}
-
-#詳しい地図
-# 地図データ
-jp = rgdal::readOGR("JPN_adm1.shp")
-jp = fortify(jp) 
-
-#表示したい範囲の緯度、経度（10進法表記）
-longA = 128.89
-longB = 129.33
-latA = 32.80
-latB = 33.31
-
-#軸の区切り幅
-dist_lat  = 0.2 
-dist_long = 0.2  
-
-#10進法表記から60進法表記への変換
-dms = seq(latA-0.02, latB, by = dist_lat)
-hms = seq(longA, longB, by = dist_long)
-# dms = deg2dms(dms,　type = "cat", sep = "dms")　#データ数は軸の区切り位置とリンクしてる　
-# hms = deg2hms(hms,　type = "cat", sep = "hms")
-
-#ここは変換した緯度経度を見て自力で数値を入れる
-dms[1] = expression("32.78"*degree)
-dms[2] = expression("32.98"*degree)
-dms[3] = expression("33.18"*degree)
-# dms[c(2,4)] = ""  　#表示しない軸ラベル
-
-hms[1] = expression("128.89"*degree)
-hms[2] = expression("129.09"*degree)
-hms[3] = expression("129.29"*degree)
-# hms[c(1,3,5)] = ""　#表示しない軸ラベル
-
-#plotする
-Fontsize = 18
-xlabel = ""
-ylabel = ""
-head(jp)
-kamigoto_map = ggplot() + 
-  geom_polygon(aes(long, lat, group = group),
-               data = jp,
-               fill = "white",
-               colour = "Black") + 
-  coord_map(xlim = c(longA, longB), ylim = c(latA, latB)) +
-  scale_y_continuous(breaks = seq(latA-0.02, latB, by = dist_lat), labels = c(dms))+
-  scale_x_continuous(breaks = seq(longA, longB, by = dist_long), labels = c(hms))+
-  labs(x = xlabel, y = ylabel)+
-  annotate("text", x = 129.199219, y = 32.838058, label = "Nakadori Island", size = 7)+
-  annotate("point", x = 129.110298, y = 32.951640, color = "red", size = 4)+
-  annotate("point", x = 129.118195, y = 32.987644, color = "red", size = 4)+
-  theme_bw(Fontsize)+
-  theme(
-    axis.text.y = element_text(angle = 35),
-    axis.text.x = element_text(angle = 35, vjust = 1, hjust = 1),
-    panel.border = element_rect(color = "black", fill = NA),
-    panel.background = element_rect(fill = "grey90")
-  )
-```
-
-本調査は，長崎県五島列島の中通島に位置する新上五島町有川地先と鯛ノ浦湾 (図)にて行った。
+本調査は，長崎県五島列島の中通島に位置する新上五島町有川地先と鯛ノ浦湾 (図\@ref(fig:kamigoto-map))にて行った。
 有川地先では褐藻類によってガラモ場が形成されていた。
 一方，鯛ノ浦湾では磯焼け生態系が広がっていた。
 
@@ -305,11 +152,8 @@ kamigoto_map = ggplot() +
 光量子量は，LI-190 ( Quantum Sensor, Li-Cor, Inc.) を基準とし補正値を算出し，補正を行った。
 
 ## 観測方法
-```{r}
 
-```
-
-海底から 0 m と 1 m 観測帯で溶存酸素濃度，水温を，海底から 0.5 m 観測帯で光量子量の観測を行った（図）。
+海底から 0 m と 1 m 観測帯で溶存酸素濃度，水温を，海底から 0.5 m 観測帯で光量子量の観測を行った（図\@ref(fig:setup-image)）。
 溶存酸素ロガーは，ロープの両端にアンカーとブイをくくり付け，中層ブイの浮力によって藻場内に張ったロープに，それぞれの観測帯にセンサーが来るようにカラビナ，結束バンド，ビニールテープを用いて 1 本ずつ取り付け，それぞれの藻場に設置した。
 光量子ロガーは，ロープの端に輪切りにしたホースと結束バンドを用いて光量子ロガーを固定したものを，別のロープの両端にウエイトをつけて海底に張ったロープに取り付け，光量子ロガーの浮力を利用して，海中で自立できるようにした。
 それぞれの観測帯にセンサーが来るようにロープの長さを調節し，それぞれの藻場に設置した。
@@ -338,7 +182,7 @@ GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を�
 
 ## 水温
 
-```{r}
+```{r oxx}
 oxygen = read_csv("~/Lab_Data/kawatea/Modified_Data/kamigoto_oxygen_all.csv")
 temperature_a = 
   oxygen %>% 
@@ -665,7 +509,7 @@ light = light %>% group_by(location, Date) %>% summarise(ppfd = 60*sum(ppfd)/10^
                                      "Arikawa"))) 
 
 df2 = full_join(df1 %>% filter(str_detect(key, "NEP")) %>% drop_na() %>% 
-                  select(Date, location, value),
+                  dplyr::select(Date, location, value),
                 light, by = c("Date", "location") ) %>% 
   filter(str_detect(location, "Tainoura|Sarg"))
 
@@ -754,7 +598,7 @@ cem =
   separate(file, c("x", "y", "location", "position", "z")) %>% 
   unnest() %>% 
   mutate(datetime = ymd_hms(paste(`YYYY/MM/DD`, `hh:mm:ss`))) %>% 
-  select(location, datetime,
+  dplyr::select(location, datetime,
          speed = starts_with("Velo["),
          velX = starts_with("Vel X["),
          velY = starts_with("Vel Y["),
@@ -883,7 +727,7 @@ nutrient2017 =
                                `NO[3]` = "NO3",
                                `PO[4]` = "PO4",
                                `NH[4]` = "NH4")) %>%
-      select(date, location, sampling_depth, Nutrient, conc = mumol_mean) %>%
+      dplyr::select(date, location, sampling_depth, Nutrient, conc = mumol_mean) %>%
       separate(location, into = c("station", "variable")) %>%
       filter(!str_detect(Nutrient, "Si*"))
   })) %>% unnest(data) %>% select(-fname)
@@ -899,7 +743,7 @@ nutrient2017 =
     z = X %>% pull(date)
     tibble(date = z, conc = x + y)
   })) %>%
-  select(-NO2, -NO3) %>%
+  dplyr::select(-NO2, -NO3) %>%
   gather(Nutrient, data, -(station:sampling_depth)) %>%
   unnest(data) 
 
@@ -914,7 +758,7 @@ nutrient2018 =
     }
   })) %>%
   unnest() %>%
-  select(date, station, variable, sampling_depth, Nutrient, conc)
+  dplyr::select(date, station, variable, sampling_depth, Nutrient, conc)
 
 nutrient =
   bind_rows(nutrient2017, nutrient2018) %>%
@@ -1077,13 +921,167 @@ agricultural and forest meteorology. 148:1827-1847.
 
 # Figures
 
+```{r, cache = TRUE, results="hide"}
+createScaleBar <- function(lon,lat,distanceLon,distanceLat,distanceLegend, dist.units = "km"){
+  bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon, dist.units = dist.units, model = "WGS84")
+  
+topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.units, model = "WGS84")
+rectangle <- cbind(lon=c(lon, lon, bottomRight[1,"long"], bottomRight[1,"long"], lon),
+                     lat = c(lat, topLeft[1,"lat"], topLeft[1,"lat"],lat, lat))
+rectangle <- data.frame(rectangle, stringsAsFactors = FALSE)
+  
+# Second rectangle t right of the first rectangle
+bottomRight2 <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.units, model = "WGS84")
+rectangle2 <- cbind(lon = c(bottomRight[1,"long"], bottomRight[1,"long"], bottomRight2[1,"long"], bottomRight2[1,"long"], bottomRight[1,"long"]),
+                      lat=c(lat, topLeft[1,"lat"], topLeft[1,"lat"], lat, lat))
+rectangle2 <- data.frame(rectangle2, stringsAsFactors = FALSE)
+  
+# Now let's deal with the text
+onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLegend, dist.units = dist.units, model = "WGS84")
+onTop2 <- onTop3 <- onTop
+onTop2[1,"long"] <- bottomRight[1,"long"]
+onTop3[1,"long"] <- bottomRight2[1,"long"]
+  
+legend <- rbind(onTop, onTop2, onTop3)
+legend <- data.frame(cbind(legend, text = c(0, distanceLon, distanceLon*2)), stringsAsFactors = FALSE, row.names = NULL)
+return(list(rectangle = rectangle, rectangle2 = rectangle2, legend = legend))
+}
+
+createOrientationArrow <- function(scaleBar, length, distance = 1, dist.units = "km"){
+  lon <- scaleBar$rectangle2[1,1]
+  lat <- scaleBar$rectangle2[1,2]
+  
+  # Bottom point of the arrow
+  begPoint <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distance, dist.units = dist.units, model = "WGS84")
+  lon <- begPoint[1,"long"]
+  lat <- begPoint[1,"lat"]
+  
+  # Let us create the endpoint
+  onTop <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = length, dist.units = dist.units, model = "WGS84")
+  
+  leftArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 225, dist = length/5, dist.units = dist.units, model = "WGS84")
+  
+  rightArrow <- gcDestination(lon = onTop[1,"long"], lat = onTop[1,"lat"], bearing = 135, dist = length/5, dist.units = dist.units, model = "WGS84")
+  
+  res <- rbind(
+    cbind(x = lon, y = lat, xend = onTop[1,"long"], yend = onTop[1,"lat"]),
+    cbind(x = leftArrow[1,"long"], y = leftArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]),
+    cbind(x = rightArrow[1,"long"], y = rightArrow[1,"lat"], xend = onTop[1,"long"], yend = onTop[1,"lat"]))
+  
+  res <- as.data.frame(res, stringsAsFactors = FALSE)
+  
+  # Coordinates from which "N" will be plotted
+  coordsN <- cbind(x = lon, y = (lat + onTop[1,"lat"])/2)
+  
+  return(list(res = res, coordsN = coordsN))
+}
+
+res <- c()
+scaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.unit = "km", rec.fill = "white", rec.colour = "black", rec2.fill = "black", rec2.colour = "black", legend.colour = "black", legend.size = 3, orientation = TRUE, arrow.length = 500, arrow.distance = 300, arrow.North.size = 6, arrow.color = "black", box = TRUE, box.line.color = "black", box.fill.color = "white", box.offset = 1){
+  if (box){# Add a background box for better visualization on top of a base map
+    topLeft <- gcDestination(lon = lon, lat = lat, bearing = 0, dist = distanceLat, dist.units = dist.unit, model = "WGS84")
+    bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon*2, dist.units = dist.unit, model = "WGS84")
+    
+    boxTopLeft <- gcDestination(lon = topLeft[1,"long"], lat = topLeft[1,"lat"], bearing = 315, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxTopRight <- gcDestination(lon = bottomRight[1,"long"], lat = topLeft[1,"lat"], bearing = 45, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxBottomRight <- gcDestination(lon = bottomRight[1,"long"], lat = bottomRight[1,"lat"], bearing = 135, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    boxBottomLeft <- gcDestination(lon = topLeft[1,"long"], lat = bottomRight[1,"lat"], bearing = 225, dist = box.offset, dist.units = dist.unit, model = "WGS84")
+    bg <- cbind(lon = c(boxTopLeft[1,"long"], boxTopRight[1,"long"], boxBottomRight[1,"long"], boxBottomLeft[1,"long"], boxTopLeft[1,"long"]),
+                lat = c(boxTopLeft[1, "lat"], boxTopRight[1, "lat"], boxBottomRight[1, "lat"], boxBottomLeft[1, "lat"], boxTopLeft[1, "lat"]))
+    bgdf <- data.frame(bg, stringsAsFactors = FALSE)
+    bg <- geom_polygon(data = bgdf, aes(x = lon, y = lat), fill = box.fill.color, colour = box.line.color, size = 0.2)
+    res <- c(res, bg)
+  }
+  
+  laScaleBar <- createScaleBar(lon = lon, lat = lat, distanceLon = distanceLon, distanceLat = distanceLat, distanceLegend = distanceLegend, dist.unit = dist.unit)
+  # First rectangle
+  rectangle1 <- geom_polygon(data = laScaleBar$rectangle, aes(x = lon, y = lat), fill = rec.fill, colour = rec.colour)
+  
+  # Second rectangle
+  rectangle2 <- geom_polygon(data = laScaleBar$rectangle2, aes(x = lon, y = lat), fill = rec2.fill, colour = rec2.colour)
+  
+  # Legend
+  scaleBarLegend <- annotate("text", label = paste(laScaleBar$legend[,"text"], dist.unit, sep=""), x = laScaleBar$legend[,"long"], y = laScaleBar$legend[,"lat"], size = legend.size, colour = legend.colour)
+  
+  res <- c(res, list(rectangle1, rectangle2, scaleBarLegend))
+  
+  if(orientation){# Add an arrow pointing North
+    coordsArrow <- createOrientationArrow(scaleBar = laScaleBar, length = arrow.length, distance = arrow.distance, dist.unit = dist.unit)
+    arrow <- list(geom_segment(data = coordsArrow$res, aes(x = x, y = y, xend = xend, yend = yend), color = arrow.color), annotate("text", label = "N", x = coordsArrow$coordsN[1,"x"], y = coordsArrow$coordsN[1,"y"], size = arrow.North.size, colour = arrow.color))
+    res <- c(res, arrow)
+  }
+  
+  return(res)
+}
+
+#詳しい地図
+# 地図データ
+jp = rgdal::readOGR("~/Lab_Data/Japan_map_data/JPN_adm1.shp")
+jp = fortify(jp) 
+
+#表示したい範囲の緯度、経度（10進法表記）
+longA = 128.89
+longB = 129.33
+latA = 32.80
+latB = 33.31
+
+#軸の区切り幅
+dist_lat  = 0.2 
+dist_long = 0.2  
+
+#10進法表記から60進法表記への変換
+dms = seq(latA-0.02, latB, by = dist_lat)
+hms = seq(longA, longB, by = dist_long)
+# dms = deg2dms(dms,　type = "cat", sep = "dms")　#データ数は軸の区切り位置とリンクしてる　
+# hms = deg2hms(hms,　type = "cat", sep = "hms")
+
+#ここは変換した緯度経度を見て自力で数値を入れる
+dms[1] = expression("32.78"*degree)
+dms[2] = expression("32.98"*degree)
+dms[3] = expression("33.18"*degree)
+# dms[c(2,4)] = ""  　#表示しない軸ラベル
+
+hms[1] = expression("128.89"*degree)
+hms[2] = expression("129.09"*degree)
+hms[3] = expression("129.29"*degree)
+# hms[c(1,3,5)] = ""　#表示しない軸ラベル
+
+#plotする
+xlabel = ""
+ylabel = ""
+kamigoto_map=ggplot() + 
+  geom_polygon(aes(long, lat, group = group),
+               data = jp,
+               fill = "white",
+               colour = "Black") + 
+  coord_map(xlim = c(longA, longB), ylim = c(latA, latB)) +
+  scale_y_continuous(breaks = seq(latA-0.02, latB, by = dist_lat), labels = c(dms))+
+  scale_x_continuous(breaks = seq(longA, longB, by = dist_long), labels = c(hms))+
+  labs(x = xlabel, y = ylabel)+
+  annotate("text", x = 129.199219, y = 32.838058, label = "Nakadori Island", size = 7)+
+  annotate("point", x = 129.110298, y = 32.951640, color = "red", size = 4)+
+  annotate("point", x = 129.118195, y = 32.987644, color = "red", size = 4)+
+  theme_bw()+
+  theme(
+    axis.text.y = element_text(angle = 35),
+    axis.text.x = element_text(angle = 35, vjust = 1, hjust = 1),
+    panel.border = element_rect(color = "black", fill = NA),
+    panel.background = element_rect(fill = "grey90")
+  )
+```
+
 ```{r kamigoto-map, fig.cap = CAP}
-CAP = "kamigoto_map"
+CAP = "This study was conducted at Arikawa Bay (top disc) and Tainoura Bay (bottom disc) in Nakadori Island, Nagasaki Prefecture."
 kamigoto_map
 ```
 
+```{r setup-image, fig.cap = CAP}
+CAP = "The setup of the data loggers used in this study."
+knitr::include_graphics("~/Lab_Data/kawatea/Thesis_images/設置イメージ.png")
+```
+
 ```{r temperature-plot, fig.cap = CAP}
-CAP = "Temperature"
+CAP = "A boxplot of the mean daily water temperatures at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecutre. The black line indicates a Generalized Additive Model fit to the data, and the shaded region is the 95\\% confidence interval."
 temperature_plot
 ```
 
@@ -1093,7 +1091,7 @@ light_plot
 ```
 
 ```{r NEP-plot, fig.cap = CAP}
-CAP = "NEP"
+CAP = "A boxplot of the mean net ecosystem production rate (NEP) at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecutre. The black line indicates a Generalized Additive Model fit to the data, and the shaded region is the 95\\% confidence interval."
 NEP_plot
 ```
 
@@ -1103,19 +1101,19 @@ RP_plot
 ```
 
 ```{r cem-plot, fig.cap = CAP}
-CAP = "cem"
+CAP = "The mean monthly water velocity at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecutre. The error bars indicate one standard error."
 cem_plot
 ```
 
 ```{r nutrient-plot, fig.cap = CAP}
-CAP = "nutrient"
+CAP = "The mean monthly nitrite-nitrate (top) and phosphate (bottom) concentration at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecutre. The error bars indicate one standard error."
 nutrient_plot
 ```
 
 # Tables
 
 ```{r temperature-table, results = "asis"}
-CAP = "Temperature"
+CAP = "Monthly water temperatures at Arikawa Bay and Tainoura Bay, Nakadori Island, Nagasaki Prefecture."
 CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
 temperature2 %>% 
   kable(format = "latex",
