@@ -60,6 +60,27 @@ library(lubridate)
 library(readxl)
 library(knitr)
 library(kableExtra)
+library(stringr)
+library(glue)
+#マイ関数------------------------------
+my_date_format = function() {
+  # 年・月の軸のフォーマットを定義
+  function(x)
+  {
+    m <- format(x,"%m")
+    y <- format(x,"%Y")
+    ifelse(duplicated(y),
+           paste0(m,"月"),
+           paste0(m,"月\n", y, "年"))
+  }
+}
+
+month_labels = function() {
+  function(x) {
+    paste0(x, "月")
+  }
+}
+source("../theme_kawate.R")
 ```
 
 ```{r, eval = FALSE}
@@ -158,11 +179,105 @@ GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を�
 
 ## 水温
 
+```{r}
+oxygen = read_csv("~/Lab_Data/kawatea/Modified_Data/kamigoto_oxygen_all.csv")
+temperature_a = 
+  oxygen %>% 
+  unnest() %>% 
+  select(Date, location, position, datetime, temperature) %>% 
+  filter(str_detect(position,"0m"))
+  
+#重複しているデータを削除する
+temperature_a = 
+  temperature_a %>% group_by(location, Date) %>% nest() %>% 
+  mutate(data = map(data, function(X) {
+    X %>% distinct()
+  })) %>% unnest() 
+
+#おかしな値を削除
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-04-19") & str_detect(location, "arikawagaramo")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-04-19") & str_detect(location, "tainoura")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-05-16") & str_detect(location, "tainoura")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-05-17") & str_detect(location, "tainoura")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-06-21") & str_detect(location, "tainoura")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-06-21") & str_detect(location, "arikawaamamo")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-06-21") & str_detect(location, "arikawagaramo")))
+temperature_a = temperature_a %>% filter(!(Date == as.Date("2018-07-05") & str_detect(location, "tainoura")))
+
+#月ごと
+temperature = temperature_a %>% 
+  mutate(month = month(Date)) 
+
+temperature = temperature %>% 
+  ungroup() %>%
+  mutate(location = recode(location,
+                           "tainoura" = 1,
+                           "arikawaamamo" = 2,
+                           "arikawagaramo" = 3,
+                           "mushima2" = 4,
+                           "mushima3" = 5))  %>%
+  mutate(location = factor(location,
+                           levels = c(1,2,3,4,5),
+                           label = c("Tainoura",
+                                     "Arikawa (Zostera)",
+                                     "Arikawa",
+                                     "Mushima (Old port)" ,
+                                     "Mushima (New port)" ))) %>% 
+  group_by(location, Date) %>% 
+  summarise(temperature = mean(temperature, na.rm=T)) %>% 
+  mutate(month = month(Date)) 
+
+temperature = temperature %>% 
+  filter(!str_detect(location, "Zostera"))
+
+xlabel = ""
+ylabel = expression(Temperature~(degree*C))
+gtitle = ""
+
+temperature_plot = 
+  temperature %>%
+  mutate(month = month(Date)) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = month,
+                   y = temperature,
+                   color = location,
+                   fill = location,
+                   group =  month),
+               alpha = 0.5,
+               size = rel(0.4)) +
+  geom_smooth(aes(x= month, y = temperature,
+                  linetype = "GAM"),
+              method = "gam",
+              method.args = list(family = Gamma(link = "log")),
+              fill = "black",
+              color = "black",
+              size = rel(0.4),
+              alpha = 0.25,
+              formula = y ~ s(x)) +
+  scale_x_continuous(xlabel, 
+                     minor_breaks = 1:12,
+                     breaks = c(1, 5, 8, 12),
+                     labels = month.abb[c(1, 5, 8, 12)]) +
+  scale_y_continuous(name = ylabel,
+                     limits = c(10, 30),
+                     breaks = c(10, 15, 20, 25, 30)) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_kawate(16) +
+  facet_wrap("location", nrow = 1)
+
+temperature2 = 
+  temperature %>% 
+  group_by(location, month) %>% 
+  summarise_at(vars(temperature), funs(mean, sd, min, max)) %>% 
+  arrange(location, month)
+```
+
 水温は 1 日ごとに平均水温を算出した。
-有川地先の平均水温は 1 月に最小値 12.5 °C を記録し，7 月にかけて上昇し，最大値 27.2°C を記録した。
+有川地先の平均水温は 1 月に最小値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 1) %>% pull(mean) %>% round(digits = 1)` °C を記録し，7 月にかけて上昇し，最大値 `r temperature2 %>% filter(str_detect(location, "Arik"), month == 7) %>% pull(mean) %>% round(digits = 1)` °C を記録した。
 また， 8 月から 12 月にかけて減少した。
-鯛ノ浦湾は 2 月に最小値 13.1 °Cを記録し，8 月にかけて上昇し最大値 26.0 °Cを記録した。
-8 月から 12 月にかけて減少した(図)。
+鯛ノ浦湾は 2 月に最小値 `r temperature2 %>% filter(str_detect(location, "Tain"), month == 2) %>% pull(mean) %>% round(digits = 1)` °Cを記録し，8 月にかけて上昇し最大値 `r temperature2 %>% filter(str_detect(location, "Tain"), month == 8) %>% pull(mean) %>% round(digits = 1)` °Cを記録した。
+8 月から 12 月にかけて減少した（表\@ref(tab:temperature-table); 図\@ref(fig:temperature-plot)）。
 
 両地点とも，冬から夏に上昇し，夏から冬に減少する変動が見られた。
 
@@ -202,7 +317,7 @@ GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を�
 この違いが NEP の変動に表れたと考えられる。
 これは，陸上生態系における，バイオマスが小さい灌木地の NEP の季節変動が，バイオマスが大きい落葉広葉樹林に比べて緩やかであること ( Xiao *et al*. 2008 ) と傾向が一致した。
 
-##　4, 8 月の NEP
+## 4, 8 月の NEP
 
 両地点において， NEP は 4 月と 8 月に高くなった（図）。
 4 月に NEP が高くなった要因は高い光量子量と水温が 20 ℃ であったことが関係していると考えられる。
@@ -216,7 +331,7 @@ GAM の接線の傾きをその時間の生産量とし， 1 日の生産量を�
 土屋ら ( 2012 ) は，水温が上昇することで， NPP が減少することを明らかにした。
 このことから， 8 月の NEP は，水温が上昇したことで，抑えられたのだと考えられる。
 
-##　6, 7 月の NEP
+## 6, 7 月の NEP
 
 両地点において， 6 月と 7 月に NEP が低くなることが記録された（図）。
 本研究で得られた光量子量データによると，6 月の光量子量は 4 月や 8 月に比べて低くなった（図）。
@@ -233,7 +348,7 @@ NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃�
 このため，栄養塩濃度は NEP が低くなる要因とは言えない。
 以上のことから， 7 月に NEP が低くなる要因は現時点では説明できなかった。
 
-##　鯛ノ浦における NEP について
+## 鯛ノ浦における NEP について
 
 磯焼け生態系である鯛ノ浦にて， NEP が負の値をとることはなかった。
 海藻類がほとんど消失しているにも関わらず， NEP が負の値を示すことがなかったのは，微細藻などの植物プランクトンによる生産量があったためだと考えられる( Fieled 1998 )。
@@ -242,7 +357,7 @@ NEP に高低差が生まれた 4 月， 6 月， 7 月， 8 月の栄養塩濃�
 そのため，植物プランクトンによる NEP の推定はできない。
 今後，プランクトンによる生産量を推定することは，磯焼け生態系における NEP の変動を理解するうえで重要なことである。
 
-##　まとめ
+## まとめ
 
 本研究では，異なる状態の沿岸生態系において，開放系溶存酸素法を用いて NEP の観測を行った。
 その結果，沿岸域において，生態系が異なることで， NEP の季節変動に違いが生まれることが明らかとなった。
@@ -318,6 +433,33 @@ Xiao, J., Zhuang, Q., Baldocchi, D.D., Law, B.E., Richardson, A.D., et
 al. 2008. Estimation of net ecosystem carbon exchange for the
 conterminous United States by combining MODIS andAmeriFlux data.
 agricultural and forest meteorology. 148:1827-1847.
+
+
+# Figures
+
+```{r temperature-plot, fig.cap = CAP}
+CAP = "Temperature"
+temperature_plot
+```
+
+
+# Tables
+
+```{r temperature-table, results = "asis"}
+CAP = "Temperature"
+CNAMES = c("Location", "Month", "Mean", "Std. Dev.", "Min.", "Max.")
+temperature2 %>% 
+  kable(format = "latex",
+        booktabs = TRUE,
+        linesep = "",
+        caption = CAP,
+        col.names = CNAMES,
+        digits = c(0, 0, 1,1,1,1)) %>% 
+  kable_styling(latex_options = "HOLD_position", 
+                font_size = 10)
+
+cat("\n\\clearpage\n")
+```
 
 
 
