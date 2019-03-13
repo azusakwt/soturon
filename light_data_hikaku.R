@@ -161,6 +161,7 @@ dset_daily %>%
 ggsave(filename = "光環境ボックス.png", 
        width = WIDTH,
        height = HEIGHT,
+       dpi = 1200,
        units = "mm")  
 
 library(mgcv)

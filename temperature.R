@@ -174,7 +174,7 @@ HEIGHT = 210/2
 ggsave(filename = "水温ボックス.png", 
        width = WIDTH,
        height = HEIGHT,
-       dpi = 600,
+       dpi = 1200,
        units = "mm")
 
 #六島------------------------------------------------------------------------
